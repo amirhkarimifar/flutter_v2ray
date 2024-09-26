@@ -59,8 +59,8 @@ android {
 
 
 dependencies {
-    implementation(name: "libv2ray", ext: "aar")
     implementation(name: "libv2ray-sources", ext: "jar")
+    implementation(name: "libv2ray", ext: "aar")
     implementation 'androidx.appcompat:appcompat:1.6.1'
 }
 
