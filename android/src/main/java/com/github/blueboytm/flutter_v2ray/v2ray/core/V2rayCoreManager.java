@@ -118,15 +118,40 @@ public final class V2rayCoreManager {
                 if (hours == 23) {
                     hours = 0;
                 }
+                
+                // Update traffic statistics
                 if (enable_traffic_statics) {
-                    downloadSpeed = v2RayPoint.queryStats("block", "downlink") + v2RayPoint.queryStats("proxy", "downlink");
-                    uploadSpeed = v2RayPoint.queryStats("block", "uplink") + v2RayPoint.queryStats("proxy", "uplink");
+                    downloadSpeed = v2RayPoint.queryStats("block", "downlink") + 
+                                  v2RayPoint.queryStats("proxy", "downlink");
+                    uploadSpeed = v2RayPoint.queryStats("block", "uplink") + 
+                                  v2RayPoint.queryStats("proxy", "uplink");
                     totalDownload = totalDownload + downloadSpeed;
                     totalUpload = totalUpload + uploadSpeed;
+                    
+                    // Update notification if service is running
+                    if (v2rayServicesListener != null && isV2rayCoreRunning()) {
+                        Service service = v2rayServicesListener.getService();
+                        if (service instanceof V2rayVPNService) {
+                            ((V2rayVPNService) service).updateNotification(
+                                currentConfig,
+                                SERVICE_DURATION,
+                                uploadSpeed,
+                                downloadSpeed,
+                                totalUpload,
+                                totalDownload
+                            );
+                        }
+                    }
                 }
-                SERVICE_DURATION = Utilities.convertIntToTwoDigit(hours) + ":" + Utilities.convertIntToTwoDigit(minutes) + ":" + Utilities.convertIntToTwoDigit(seconds);
+    
+                // Update duration
+                SERVICE_DURATION = Utilities.convertIntToTwoDigit(hours) + ":" + 
+                                 Utilities.convertIntToTwoDigit(minutes) + ":" + 
+                                 Utilities.convertIntToTwoDigit(seconds);
+                
+                // Send broadcast
                 Intent connection_info_intent = new Intent("V2RAY_CONNECTION_INFO");
-                connection_info_intent.putExtra("STATE", V2rayCoreManager.getInstance().V2RAY_STATE);
+                connection_info_intent.putExtra("STATE", V2RAY_STATE);
                 connection_info_intent.putExtra("DURATION", SERVICE_DURATION);
                 connection_info_intent.putExtra("UPLOAD_SPEED", uploadSpeed);
                 connection_info_intent.putExtra("DOWNLOAD_SPEED", downloadSpeed);
@@ -134,10 +159,10 @@ public final class V2rayCoreManager {
                 connection_info_intent.putExtra("DOWNLOAD_TRAFFIC", totalDownload);
                 context.sendBroadcast(connection_info_intent);
             }
-
+    
             public void onFinish() {
                 countDownTimer.cancel();
-                if (V2rayCoreManager.getInstance().isV2rayCoreRunning())
+                if (isV2rayCoreRunning())
                     makeDurationTimer(context, enable_traffic_statics);
             }
         }.start();
@@ -162,8 +187,10 @@ public final class V2rayCoreManager {
             isLibV2rayCoreInitialized = false;
         }
     }
+    private V2rayConfig currentConfig;
 
     public boolean startCore(final V2rayConfig v2rayConfig) {
+        this.currentConfig = v2rayConfig;
         makeDurationTimer(v2rayServicesListener.getService().getApplicationContext(),
                 v2rayConfig.ENABLE_TRAFFIC_STATICS);
         V2RAY_STATE = AppConfigs.V2RAY_STATES.V2RAY_CONNECTING;
@@ -302,6 +329,51 @@ public final class V2rayCoreManager {
                 NotificationManager notificationManager = 
                 (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
             notificationManager.notify(NOTIFICATION_ID, notificationBuilder.build());
+    }
+
+    public void onTick(long millisUntilFinished) {
+        seconds++;
+        if (seconds == 59) {
+            minutes++;
+            seconds = 0;
+        }
+        if (minutes == 59) {
+            minutes = 0;
+            hours++;
+        }
+        if (hours == 23) {
+            hours = 0;
+        }
+        
+        if (enable_traffic_statics) {
+            downloadSpeed = v2RayPoint.queryStats("block", "downlink") + 
+                           v2RayPoint.queryStats("proxy", "downlink");
+            uploadSpeed = v2RayPoint.queryStats("block", "uplink") + 
+                         v2RayPoint.queryStats("proxy", "uplink");
+            totalDownload = totalDownload + downloadSpeed;
+            totalUpload = totalUpload + uploadSpeed;
+            
+            // Update notification with new traffic stats
+            if (v2rayServicesListener != null && isV2rayCoreRunning()) {
+                Service service = v2rayServicesListener.getService();
+                if (service instanceof V2rayVPNService) {
+                    ((V2rayVPNService) service).updateNotification(
+                        currentConfig,
+                        SERVICE_DURATION,
+                        uploadSpeed,
+                        downloadSpeed,
+                        totalUpload,
+                        totalDownload
+                    );
+                }
+            }
+        }
+    
+        SERVICE_DURATION = Utilities.convertIntToTwoDigit(hours) + ":" + 
+                          Utilities.convertIntToTwoDigit(minutes) + ":" + 
+                          Utilities.convertIntToTwoDigit(seconds);
+        
+        // ... existing broadcast code ...
     }
 
 

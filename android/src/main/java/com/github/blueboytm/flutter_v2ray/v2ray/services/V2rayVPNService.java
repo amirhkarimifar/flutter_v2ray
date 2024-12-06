@@ -33,18 +33,98 @@ public class V2rayVPNService extends VpnService implements V2rayServicesListener
     @Override
     public void onCreate() {
         super.onCreate();
+        createNotificationChannel();
         startForegroundWithInitialNotification();
         V2rayCoreManager.getInstance().setUpListener(this);
     }
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                CHANNEL_ID,
+                "V2Ray Background Service",
+                NotificationManager.IMPORTANCE_LOW);
+            notificationManager.createNotificationChannel(channel);
+        }
+    }
+
     private void startForegroundWithInitialNotification() {
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "A_FLUTTER_V2RAY_SERVICE_CH_ID")
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("V2Ray Starting...")
-            .setPriority(NotificationCompat.PRIORITY_MIN)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(true);
 
-        startForeground(1, builder.build());
+        startForeground(NOTIFICATION_ID, builder.build());
     }
+
+    public void updateNotification(V2rayConfig config, String duration, 
+                                 long uploadSpeed, long downloadSpeed,
+                                 long totalUpload, long totalDownload) {
+        this.currentConfig = config;
+
+        // Format traffic statistics
+        String uploadText = formatSpeed(uploadSpeed);
+        String downloadText = formatSpeed(downloadSpeed);
+        String totalUploadText = formatTraffic(totalUpload);
+        String totalDownloadText = formatTraffic(totalDownload);
+
+        // Create notification content
+        String contentText = String.format("↑ %s  ↓ %s\nTotal: ↑ %s  ↓ %s\n%s", 
+            uploadText, downloadText, totalUploadText, totalDownloadText, duration);
+
+        // Create disconnect intent
+        Intent stopIntent = new Intent(this, V2rayVPNService.class);
+        stopIntent.putExtra("COMMAND", AppConfigs.V2RAY_SERVICE_COMMANDS.STOP_SERVICE);
+        PendingIntent pendingIntent = PendingIntent.getService(
+            this, 0, stopIntent, 
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? 
+                PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT :
+                PendingIntent.FLAG_UPDATE_CURRENT
+        );
+
+        // Create content intent
+        Intent launchIntent = getPackageManager().getLaunchIntentForPackage(getPackageName());
+        if (launchIntent != null) {
+            launchIntent.setAction("FROM_NOTIFICATION");
+            launchIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        }
+        PendingIntent contentIntent = PendingIntent.getActivity(
+            this, 0, launchIntent, 
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? 
+                PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT :
+                PendingIntent.FLAG_UPDATE_CURRENT
+        );
+
+        // Build notification
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+            .setSmallIcon(config.APPLICATION_ICON)
+            .setContentTitle(config.REMARK)
+            .setContentText(contentText)
+            .setStyle(new NotificationCompat.BigTextStyle().bigText(contentText))
+            .addAction(0, config.NOTIFICATION_DISCONNECT_BUTTON_NAME, pendingIntent)
+            .setContentIntent(contentIntent)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setShowWhen(false);
+
+        notificationManager.notify(NOTIFICATION_ID, builder.build());
+    }
+
+    private String formatSpeed(long bytesPerSecond) {
+        if (bytesPerSecond < 1024) return bytesPerSecond + " B/s";
+        if (bytesPerSecond < 1024 * 1024) return String.format("%.1f KB/s", bytesPerSecond / 1024.0);
+        if (bytesPerSecond < 1024 * 1024 * 1024) return String.format("%.1f MB/s", bytesPerSecond / (1024.0 * 1024.0));
+        return String.format("%.1f GB/s", bytesPerSecond / (1024.0 * 1024.0 * 1024.0));
+    }
+
+    private String formatTraffic(long bytes) {
+        if (bytes < 1024) return bytes + " B";
+        if (bytes < 1024 * 1024) return String.format("%.1f KB", bytes / 1024.0);
+        if (bytes < 1024 * 1024 * 1024) return String.format("%.1f MB", bytes / (1024.0 * 1024.0));
+        return String.format("%.1f GB", bytes / (1024.0 * 1024.0 * 1024.0));
+    }
+}
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         
