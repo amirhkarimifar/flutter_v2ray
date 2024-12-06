@@ -33,9 +33,18 @@ public class V2rayVPNService extends VpnService implements V2rayServicesListener
     @Override
     public void onCreate() {
         super.onCreate();
+        startForegroundWithInitialNotification();
         V2rayCoreManager.getInstance().setUpListener(this);
     }
+    private void startForegroundWithInitialNotification() {
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "A_FLUTTER_V2RAY_SERVICE_CH_ID")
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle("V2Ray Starting...")
+            .setPriority(NotificationCompat.PRIORITY_MIN)
+            .setOngoing(true);
 
+        startForeground(1, builder.build());
+    }
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         

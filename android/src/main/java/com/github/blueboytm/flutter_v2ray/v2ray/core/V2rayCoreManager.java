@@ -179,9 +179,9 @@ public final class V2rayCoreManager {
             v2RayPoint.setDomainName(v2rayConfig.CONNECTED_V2RAY_SERVER_ADDRESS + ":" + v2rayConfig.CONNECTED_V2RAY_SERVER_PORT);
             v2RayPoint.runLoop(false);
             V2RAY_STATE = AppConfigs.V2RAY_STATES.V2RAY_CONNECTED;
-            // if (isV2rayCoreRunning()) {
-            //     showNotification(v2rayConfig);
-            // }
+            if (isV2rayCoreRunning()) {
+                showNotification(v2rayConfig);
+            }
         } catch (Exception e) {
             Log.e(V2rayCoreManager.class.getSimpleName(), "startCore failed =>", e);
             return false;
@@ -299,18 +299,9 @@ public final class V2rayCoreManager {
         PendingIntent pendingIntent = PendingIntent.getService(
                 context, 0, stopIntent, flags);
 
-        // Build the notification
-        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(context, notificationChannelID)
-                .setSmallIcon(v2rayConfig.APPLICATION_ICON)
-                .setContentTitle(v2rayConfig.REMARK)
-                .addAction(0, v2rayConfig.NOTIFICATION_DISCONNECT_BUTTON_NAME, pendingIntent)
-                .setPriority(NotificationCompat.PRIORITY_MIN)
-                .setShowWhen(false)
-                .setOnlyAlertOnce(true)
-                .setContentIntent(notificationContentPendingIntent)
-                .setOngoing(true);
-
-        context.startForeground(NOTIFICATION_ID, notificationBuilder.build());
+                NotificationManager notificationManager = 
+                (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+            notificationManager.notify(NOTIFICATION_ID, notificationBuilder.build());
     }
 
 
