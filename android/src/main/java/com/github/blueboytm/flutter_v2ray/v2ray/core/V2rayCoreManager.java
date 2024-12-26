@@ -125,14 +125,18 @@ public final class V2rayCoreManager {
                     totalUpload = totalUpload + uploadSpeed;
                 }
                 SERVICE_DURATION = Utilities.convertIntToTwoDigit(hours) + ":" + Utilities.convertIntToTwoDigit(minutes) + ":" + Utilities.convertIntToTwoDigit(seconds);
-                Intent connection_info_intent = new Intent("V2RAY_CONNECTION_INFO");
-                connection_info_intent.putExtra("STATE", V2rayCoreManager.getInstance().V2RAY_STATE);
-                connection_info_intent.putExtra("DURATION", SERVICE_DURATION);
-                connection_info_intent.putExtra("UPLOAD_SPEED", uploadSpeed);
-                connection_info_intent.putExtra("DOWNLOAD_SPEED", downloadSpeed);
-                connection_info_intent.putExtra("UPLOAD_TRAFFIC", totalUpload);
-                connection_info_intent.putExtra("DOWNLOAD_TRAFFIC", totalDownload);
-                context.sendBroadcast(connection_info_intent);
+                if (seconds % 5 == 0) {
+                    Intent connection_info_intent = new Intent("V2RAY_CONNECTION_INFO");
+                    connection_info_intent.putExtra("STATE", V2rayCoreManager.getInstance().V2RAY_STATE);
+                    connection_info_intent.putExtra("DURATION", SERVICE_DURATION);
+                    connection_info_intent.putExtra("UPLOAD_SPEED", uploadSpeed);
+                    connection_info_intent.putExtra("DOWNLOAD_SPEED", downloadSpeed);
+                    connection_info_intent.putExtra("UPLOAD_TRAFFIC", totalUpload);
+                    connection_info_intent.putExtra("DOWNLOAD_TRAFFIC", totalDownload);
+            
+                    // Use LocalBroadcastManager for app-local broadcasts
+                    LocalBroadcastManager.getInstance(context).sendBroadcast(connection_info_intent);
+                }
             }
 
             public void onFinish() {
@@ -164,11 +168,15 @@ public final class V2rayCoreManager {
     }
 
     public boolean startCore(final V2rayConfig v2rayConfig) {
+        // Show the notification immediately to avoid the error
+        showNotification(v2rayConfig);
+    
         makeDurationTimer(v2rayServicesListener.getService().getApplicationContext(),
                 v2rayConfig.ENABLE_TRAFFIC_STATICS);
         V2RAY_STATE = AppConfigs.V2RAY_STATES.V2RAY_CONNECTING;
+    
         if (!isLibV2rayCoreInitialized) {
-            Log.e(V2rayCoreManager.class.getSimpleName(), "startCore failed => LibV2rayCore should be initialize before start.");
+            Log.e(V2rayCoreManager.class.getSimpleName(), "startCore failed => LibV2rayCore should be initialized before start.");
             return false;
         }
         if (isV2rayCoreRunning()) {
@@ -179,9 +187,6 @@ public final class V2rayCoreManager {
             v2RayPoint.setDomainName(v2rayConfig.CONNECTED_V2RAY_SERVER_ADDRESS + ":" + v2rayConfig.CONNECTED_V2RAY_SERVER_PORT);
             v2RayPoint.runLoop(false);
             V2RAY_STATE = AppConfigs.V2RAY_STATES.V2RAY_CONNECTED;
-            if (isV2rayCoreRunning()) {
-                showNotification(v2rayConfig);
-            }
         } catch (Exception e) {
             Log.e(V2rayCoreManager.class.getSimpleName(), "startCore failed =>", e);
             return false;
@@ -259,61 +264,74 @@ public final class V2rayCoreManager {
     private void showNotification(final V2rayConfig v2rayConfig) {
         Service context = v2rayServicesListener.getService();
         if (context == null) {
+            Log.e("V2rayCoreManager", "Service context is null. Cannot show notification.");
             return;
         }
-
+    
         // Check notification permission for Android 13+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ActivityCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
                     != PackageManager.PERMISSION_GRANTED) {
+                Log.e("V2rayCoreManager", "Notification permission not granted. Cannot start foreground service.");
                 return;
             }
         }
-
-        Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
-        if (launchIntent != null) {
-            launchIntent.setAction("FROM_DISCONNECT_BTN");
-            launchIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+    
+        try {
+            Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
+            if (launchIntent != null) {
+                launchIntent.setAction("FROM_DISCONNECT_BTN");
+                launchIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            }
+            final int flags;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                flags = PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT;
+            } else {
+                flags = PendingIntent.FLAG_UPDATE_CURRENT;
+            }
+            PendingIntent notificationContentPendingIntent = PendingIntent.getActivity(
+                    context, 0, launchIntent, flags);
+    
+            String notificationChannelID = createNotificationChannelID(v2rayConfig.APPLICATION_NAME);
+    
+            Intent stopIntent;
+            if (AppConfigs.V2RAY_CONNECTION_MODE == AppConfigs.V2RAY_CONNECTION_MODES.PROXY_ONLY) {
+                stopIntent = new Intent(context, V2rayProxyOnlyService.class);
+            } else if (AppConfigs.V2RAY_CONNECTION_MODE == AppConfigs.V2RAY_CONNECTION_MODES.VPN_TUN) {
+                stopIntent = new Intent(context, V2rayVPNService.class);
+            } else {
+                return;
+            }
+            stopIntent.putExtra("COMMAND", AppConfigs.V2RAY_SERVICE_COMMANDS.STOP_SERVICE);
+    
+            PendingIntent pendingIntent = PendingIntent.getService(
+                    context, 0, stopIntent, flags);
+    
+            // Build the notification
+            NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(context, notificationChannelID)
+                    .setSmallIcon(v2rayConfig.APPLICATION_ICON)
+                    .setContentTitle(v2rayConfig.REMARK)
+                    .addAction(0, v2rayConfig.NOTIFICATION_DISCONNECT_BUTTON_NAME, pendingIntent)
+                    .setPriority(NotificationCompat.PRIORITY_MIN)
+                    .setShowWhen(false)
+                    .setOnlyAlertOnce(true)
+                    .setContentIntent(notificationContentPendingIntent)
+                    .setOngoing(true);
+    
+            context.startForeground(NOTIFICATION_ID, notificationBuilder.build());
+        } catch (Exception e) {
+            Log.e("V2rayCoreManager", "Failed to show notification. Falling back.", e);
+            showFallbackNotification(context);
         }
-        final int flags;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            flags = PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT;
-        } else {
-            flags = PendingIntent.FLAG_UPDATE_CURRENT;
-        }
-        PendingIntent notificationContentPendingIntent = PendingIntent.getActivity(
-                context, 0, launchIntent, flags);
-
-        String notificationChannelID = createNotificationChannelID(v2rayConfig.APPLICATION_NAME);
-
-        Intent stopIntent;
-        if (AppConfigs.V2RAY_CONNECTION_MODE == AppConfigs.V2RAY_CONNECTION_MODES.PROXY_ONLY) {
-            stopIntent = new Intent(context, V2rayProxyOnlyService.class);
-        } else if (AppConfigs.V2RAY_CONNECTION_MODE == AppConfigs.V2RAY_CONNECTION_MODES.VPN_TUN) {
-            stopIntent = new Intent(context, V2rayVPNService.class);
-        } else {
-            return;
-        }
-        stopIntent.putExtra("COMMAND", AppConfigs.V2RAY_SERVICE_COMMANDS.STOP_SERVICE);
-
-        PendingIntent pendingIntent = PendingIntent.getService(
-                context, 0, stopIntent, flags);
-
-        // Build the notification
-        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(context, notificationChannelID)
-                .setSmallIcon(v2rayConfig.APPLICATION_ICON)
-                .setContentTitle(v2rayConfig.REMARK)
-                .addAction(0, v2rayConfig.NOTIFICATION_DISCONNECT_BUTTON_NAME, pendingIntent)
-                .setPriority(NotificationCompat.PRIORITY_MIN)
-                .setShowWhen(false)
-                .setOnlyAlertOnce(true)
-                .setContentIntent(notificationContentPendingIntent)
-                .setOngoing(true);
-
-        context.startForeground(NOTIFICATION_ID, notificationBuilder.build());
     }
-
-
+    private void showFallbackNotification(Service context) {
+        Notification notification = new NotificationCompat.Builder(context, "fallback_channel")
+                .setContentTitle("Service Running")
+                .setContentText("V2Ray service is running.")
+                .setSmallIcon(android.R.drawable.ic_dialog_info)
+                .build();
+        context.startForeground(NOTIFICATION_ID, notification);
+    }
     public boolean isV2rayCoreRunning() {
         if (v2RayPoint != null) {
             return v2RayPoint.getIsRunning();
