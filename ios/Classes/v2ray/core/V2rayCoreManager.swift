@@ -175,7 +175,7 @@ public class V2rayCoreManager {
                     existingManager.isEnabled = true
                     existingManager.saveToPreferences { error in
                         existingManager.loadFromPreferences { _ in
-                                self.manager = existingManager
+                            self.manager = existingManager
                             self.startVPNTunnel()
                         }
                     }
