@@ -18,14 +18,12 @@ public class V2rayCoreManager {
     }
 
     private var manager = NETunnelProviderManager.shared()
-
-    private let workQueue = DispatchQueue(label: "V2rayCoreManagerWorkQueue")
     private var networkMonitor: NWPathMonitor?
-
     private var lastNetworkType: String? // 记录最后一次的网络类型
 
     var isLibV2rayCoreInitialized = false
     var V2RAY_STATE: AppConfigs.V2RAY_STATES = .DISCONNECT
+    
 
     private var trafficStatsTimer: Timer?
     private var startTime: Date?
@@ -40,7 +38,8 @@ public class V2rayCoreManager {
         // 初始化配置项
         isLibV2rayCoreInitialized = true
         V2RAY_STATE = .DISCONNECT
-
+        AppConfigs.APPLICATION_NAME = "速联"
+        
         // Record the start time
         startTime = Date()
         // 调用 startTrafficStatsTimer 启动定时器
@@ -70,8 +69,8 @@ public class V2rayCoreManager {
     private func createNewVPNConfiguration(completion: @escaping (Error?) -> Void) {
         let newManager = NETunnelProviderManager()
         newManager.protocolConfiguration = NETunnelProviderProtocol()
-        newManager.protocolConfiguration?.serverAddress = "速联"
-        newManager.localizedDescription = "速联"
+        newManager.protocolConfiguration?.serverAddress = AppConfigs.APPLICATION_NAME
+        newManager.localizedDescription = AppConfigs.APPLICATION_NAME
      
 
         newManager.saveToPreferences { error in
@@ -112,7 +111,7 @@ public class V2rayCoreManager {
     /// 创建VPN协议
     private func createVPNProtocol(vmess: String, port: Int) -> NETunnelProviderProtocol {
         let tunnelProtocol = NETunnelProviderProtocol()
-        tunnelProtocol.serverAddress = "速联" // 添加您的服务器地址
+        tunnelProtocol.serverAddress = AppConfigs.APPLICATION_NAME
         tunnelProtocol.providerConfiguration = ["vmess": vmess, "port": port]
         return tunnelProtocol
     }
@@ -128,7 +127,7 @@ public class V2rayCoreManager {
             if managers.isEmpty {
                 self.createNewVPNConfigurationAndStartTunnel(with: tunnelProtocol)
             } else {
-                let targetDescription = "速联"
+                let targetDescription = AppConfigs.APPLICATION_NAME
                 if let existingManager = managers.first(where: { $0.localizedDescription == targetDescription }) {
                     // 找到匹配的配置
                     self.manager = existingManager
