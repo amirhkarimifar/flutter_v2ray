@@ -70,8 +70,9 @@ public class V2rayCoreManager {
     private func createNewVPNConfiguration(completion: @escaping (Error?) -> Void) {
         let newManager = NETunnelProviderManager()
         newManager.protocolConfiguration = NETunnelProviderProtocol()
-        newManager.localizedDescription = "SulianVPN"
-        newManager.protocolConfiguration?.serverAddress = "SulianVPN"
+        newManager.protocolConfiguration?.serverAddress = "速联"
+        newManager.localizedDescription = "速联"
+     
 
         newManager.saveToPreferences { error in
             guard error == nil else {
@@ -111,7 +112,7 @@ public class V2rayCoreManager {
     /// 创建VPN协议
     private func createVPNProtocol(vmess: String, port: Int) -> NETunnelProviderProtocol {
         let tunnelProtocol = NETunnelProviderProtocol()
-        tunnelProtocol.serverAddress = "" // 添加您的服务器地址
+        tunnelProtocol.serverAddress = "速联" // 添加您的服务器地址
         tunnelProtocol.providerConfiguration = ["vmess": vmess, "port": port]
         return tunnelProtocol
     }
@@ -127,7 +128,16 @@ public class V2rayCoreManager {
             if managers.isEmpty {
                 self.createNewVPNConfigurationAndStartTunnel(with: tunnelProtocol)
             } else {
-                self.updateExistingVPNConfigurationAndStartTunnel(managers: managers, tunnelProtocol: tunnelProtocol)
+                let targetDescription = "速联"
+                if let existingManager = managers.first(where: { $0.localizedDescription == targetDescription }) {
+                    // 找到匹配的配置
+                    self.manager = existingManager
+                } else {
+                    // 没有找到匹配的配置，创建新的配置
+                    self.createNewVPNConfigurationAndStartTunnel(with: tunnelProtocol)
+                }
+                self.startVPNTunnel()
+
             }
         }
     }
@@ -138,8 +148,7 @@ public class V2rayCoreManager {
 
         managerToUse.isEnabled = true
         managerToUse.protocolConfiguration = tunnelProtocol
-        managerToUse.localizedDescription = "SulianVPN"
-        managerToUse.protocolConfiguration?.serverAddress = "SulianVPN"
+        managerToUse.localizedDescription = "速联"
 
         managerToUse.saveToPreferences { error in
             if let error = error {
@@ -149,7 +158,10 @@ public class V2rayCoreManager {
                 if manager == nil {
                     self.manager = managerToUse
                 }
-                self.startVPNTunnel()
+                managerToUse.loadFromPreferences {error in
+                    self.startVPNTunnel()
+                }
+               
             }
         }
     }
