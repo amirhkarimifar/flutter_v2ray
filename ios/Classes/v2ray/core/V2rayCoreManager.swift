@@ -138,23 +138,20 @@ public class V2rayCoreManager {
 
         managerToUse.isEnabled = true
         managerToUse.protocolConfiguration = tunnelProtocol
-        managerToUse.localizedDescription = "速联"
+        managerToUse.localizedDescription = "SulianVPN"
+        managerToUse.protocolConfiguration?.serverAddress = "SulianVPN"
 
         managerToUse.saveToPreferences { error in
             if let error = error {
                 os_log("saveAndStartTunnel Failed to save VPN configuration:  %{public}@", log: appLog, type: .error, error.localizedDescription)
             } else {
-            
                 // 如果是新的管理器，则保存并启动隧道
                 if manager == nil {
                     self.manager = managerToUse
                 }
-                self.manager.loadFromPreferences { error in
-                    self.startVPNTunnel()
-                }
+                self.startVPNTunnel()
             }
         }
-        
     }
 
     /// 使用新的VPN协议配置并启动隧道（调用公共方法）
