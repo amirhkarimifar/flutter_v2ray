@@ -167,13 +167,23 @@ public class V2rayCoreManager {
 
     /// 使用新的VPN协议配置并启动隧道（调用公共方法）
     private func createNewVPNConfigurationAndStartTunnel(with tunnelProtocol: NETunnelProviderProtocol) {
-        saveAndStartTunnel(with: tunnelProtocol, manager: nil)
-    }
+        let managerToUse = NETunnelProviderManager()
 
-    /// 更新现有VPN配置并启动隧道（调用公共方法）
-    private func updateExistingVPNConfigurationAndStartTunnel(managers: [NETunnelProviderManager], tunnelProtocol: NETunnelProviderProtocol) {
-        let existingManager = managers[0]
-        saveAndStartTunnel(with: tunnelProtocol, manager: existingManager)
+        managerToUse.isEnabled = true
+        managerToUse.protocolConfiguration = tunnelProtocol
+        managerToUse.localizedDescription = "速联"
+
+        managerToUse.saveToPreferences { error in
+            if let error = error {
+                os_log("saveAndStartTunnel Failed to save VPN configuration:  %{public}@", log: appLog, type: .error, error.localizedDescription)
+            } else {
+                self.manager = managerToUse
+                managerToUse.loadFromPreferences {error in
+                    self.startVPNTunnel()
+                }
+               
+            }
+        }
     }
 
     /// 启动VPN隧道
