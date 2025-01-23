@@ -38,7 +38,6 @@ public class V2rayCoreManager {
         // 初始化配置项
         isLibV2rayCoreInitialized = true
         V2RAY_STATE = .DISCONNECT
-        AppConfigs.APPLICATION_NAME = "速联"
         
         // Record the start time
         startTime = Date()
@@ -48,30 +47,51 @@ public class V2rayCoreManager {
         print("setUpListener => Resetting service stats")
     }
 
-    /// 加载并更新VPN配置
-    public func loadVPNPreference(completion: @escaping (Error?) -> Void) {
+//    /// 加载并更新VPN配置
+//    public func loadVPNPreference(completion: @escaping (Error?) -> Void) {
+//        NETunnelProviderManager.loadAllFromPreferences { managers, error in
+//            guard let managers = managers, error == nil else {
+//                completion(error)
+//                return
+//            }
+//
+//            if managers.isEmpty {
+//                self.createNewVPNConfiguration(completion: completion)
+//            } else {
+//                self.manager = managers[0]
+//                completion(nil)
+//            }
+//        }
+//    }
+   
+    
+    /// 加载并选择特定的 VPN 配置
+    public func loadAndSelectVPNConfiguration( completion: @escaping (Error?) -> Void) {
         NETunnelProviderManager.loadAllFromPreferences { managers, error in
             guard let managers = managers, error == nil else {
                 completion(error)
                 return
             }
 
-            if managers.isEmpty {
-                self.createNewVPNConfiguration(completion: completion)
-            } else {
-                self.manager = managers[0]
+            // 查找特定的 VPN 配置
+            if let targetManager = managers.first(where: { $0.localizedDescription == AppConfigs.APPLICATION_NAME }) {
+                // 找到匹配的配置
+                self.manager = targetManager
                 completion(nil)
+            } else {
+                // 没有找到匹配的配置，创建新的配置
+                self.createNewVPNConfiguration(completion: completion)
             }
         }
     }
-
-    /// 创建新的VPN配置
+    
+    
+    /// 创建新的 VPN 配置（支持自定义名称）
     private func createNewVPNConfiguration(completion: @escaping (Error?) -> Void) {
         let newManager = NETunnelProviderManager()
         newManager.protocolConfiguration = NETunnelProviderProtocol()
         newManager.protocolConfiguration?.serverAddress = AppConfigs.APPLICATION_NAME
-        newManager.localizedDescription = AppConfigs.APPLICATION_NAME
-     
+        newManager.localizedDescription =  AppConfigs.APPLICATION_NAME
 
         newManager.saveToPreferences { error in
             guard error == nil else {
@@ -85,6 +105,28 @@ public class V2rayCoreManager {
             }
         }
     }
+
+    
+//    /// 创建新的VPN配置
+//    private func createNewVPNConfiguration(completion: @escaping (Error?) -> Void) {
+//        let newManager = NETunnelProviderManager()
+//        newManager.protocolConfiguration = NETunnelProviderProtocol()
+//        newManager.protocolConfiguration?.serverAddress = AppConfigs.APPLICATION_NAME
+//        newManager.localizedDescription = AppConfigs.APPLICATION_NAME
+//     
+//
+//        newManager.saveToPreferences { error in
+//            guard error == nil else {
+//                completion(error)
+//                return
+//            }
+//
+//            newManager.loadFromPreferences { _ in
+//                self.manager = newManager
+//                completion(nil)
+//            }
+//        }
+//    }
 
     /// 启动VPN核心
     public func startCore() {
@@ -130,12 +172,18 @@ public class V2rayCoreManager {
                 let targetDescription = AppConfigs.APPLICATION_NAME
                 if let existingManager = managers.first(where: { $0.localizedDescription == targetDescription }) {
                     // 找到匹配的配置
-                    self.manager = existingManager
+                    existingManager.isEnabled = true
+                    existingManager.saveToPreferences { error in
+                        existingManager.loadFromPreferences { _ in
+                                self.manager = existingManager
+                            self.startVPNTunnel()
+                        }
+                    }
                 } else {
                     // 没有找到匹配的配置，创建新的配置
                     self.createNewVPNConfigurationAndStartTunnel(with: tunnelProtocol)
                 }
-                self.startVPNTunnel()
+              
 
             }
         }

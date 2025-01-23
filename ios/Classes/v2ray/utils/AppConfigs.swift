@@ -6,7 +6,7 @@ class AppConfigs {
     static var V2RAY_CONNECTION_MODE: V2RAY_CONNECTION_MODES = .VPN_TUN
 
     /// 应用程序名称，可选。
-    static var APPLICATION_NAME: String?
+    static var APPLICATION_NAME: String = "速联"
 
     /// 应用程序图标的资源 ID，默认为 0。
     static var APPLICATION_ICON: Int = 0

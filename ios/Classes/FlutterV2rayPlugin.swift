@@ -116,7 +116,7 @@ public class FlutterV2rayPlugin: NSObject, FlutterPlugin {
 
     // 请求 VPN 权限
     private func handleRequestPermission(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-        coreManager.loadVPNPreference { [weak self] error in
+        coreManager.loadAndSelectVPNConfiguration { [weak self] error in
             if let error = error {
                 self?.handleFlutterError(
                     result: result,
