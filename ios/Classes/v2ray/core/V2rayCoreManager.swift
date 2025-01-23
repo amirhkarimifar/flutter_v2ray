@@ -46,24 +46,6 @@ public class V2rayCoreManager {
         startNetworkMonitoring()
         print("setUpListener => Resetting service stats")
     }
-
-//    /// 加载并更新VPN配置
-//    public func loadVPNPreference(completion: @escaping (Error?) -> Void) {
-//        NETunnelProviderManager.loadAllFromPreferences { managers, error in
-//            guard let managers = managers, error == nil else {
-//                completion(error)
-//                return
-//            }
-//
-//            if managers.isEmpty {
-//                self.createNewVPNConfiguration(completion: completion)
-//            } else {
-//                self.manager = managers[0]
-//                completion(nil)
-//            }
-//        }
-//    }
-   
     
     /// 加载并选择特定的 VPN 配置
     public func loadAndSelectVPNConfiguration( completion: @escaping (Error?) -> Void) {
@@ -105,28 +87,6 @@ public class V2rayCoreManager {
             }
         }
     }
-
-    
-//    /// 创建新的VPN配置
-//    private func createNewVPNConfiguration(completion: @escaping (Error?) -> Void) {
-//        let newManager = NETunnelProviderManager()
-//        newManager.protocolConfiguration = NETunnelProviderProtocol()
-//        newManager.protocolConfiguration?.serverAddress = AppConfigs.APPLICATION_NAME
-//        newManager.localizedDescription = AppConfigs.APPLICATION_NAME
-//     
-//
-//        newManager.saveToPreferences { error in
-//            guard error == nil else {
-//                completion(error)
-//                return
-//            }
-//
-//            newManager.loadFromPreferences { _ in
-//                self.manager = newManager
-//                completion(nil)
-//            }
-//        }
-//    }
 
     /// 启动VPN核心
     public func startCore() {
@@ -183,8 +143,6 @@ public class V2rayCoreManager {
                     // 没有找到匹配的配置，创建新的配置
                     self.createNewVPNConfigurationAndStartTunnel(with: tunnelProtocol)
                 }
-              
-
             }
         }
     }
