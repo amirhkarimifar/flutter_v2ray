@@ -1,5 +1,9 @@
 package com.github.blueboytm.flutter_v2ray.v2ray.services;
 
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.net.LocalSocket;
@@ -8,6 +12,8 @@ import android.net.VpnService;
 import android.os.Build;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
+
+import androidx.core.app.NotificationCompat;
 
 import com.github.blueboytm.flutter_v2ray.v2ray.core.V2rayCoreManager;
 import com.github.blueboytm.flutter_v2ray.v2ray.interfaces.V2rayServicesListener;
@@ -25,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 public class V2rayVPNService extends VpnService implements V2rayServicesListener {
+    private static final int NOTIFICATION_ID = 10101; // 通知ID
     private ParcelFileDescriptor mInterface;
     private Process process;
     private V2rayConfig v2rayConfig;
@@ -34,6 +41,7 @@ public class V2rayVPNService extends VpnService implements V2rayServicesListener
     public void onCreate() {
         super.onCreate();
         V2rayCoreManager.getInstance().setUpListener(this);
+        createNotificationChannel(); // 创建通知渠道
     }
 
     @Override
@@ -68,7 +76,7 @@ public class V2rayVPNService extends VpnService implements V2rayServicesListener
     }
 
     private void stopAllProcess() {
-        stopForeground(true);
+        stopForeground(true); // 停止前台服务并移除通知
         isRunning = false;
         if (process != null) {
             process.destroy();
@@ -77,7 +85,6 @@ public class V2rayVPNService extends VpnService implements V2rayServicesListener
         try {
             stopSelf();
         } catch (Exception e) {
-            //ignore
             Log.e("CANT_STOP", "SELF");
         }
         try {
@@ -85,7 +92,6 @@ public class V2rayVPNService extends VpnService implements V2rayServicesListener
         } catch (Exception e) {
             // ignored
         }
-
     }
 
     private void setup() {
@@ -93,6 +99,10 @@ public class V2rayVPNService extends VpnService implements V2rayServicesListener
         if (prepare_intent != null) {
             return;
         }
+
+        // 启动前台服务
+        startForeground(NOTIFICATION_ID, createNotification());
+
         Builder builder = new Builder();
         builder.setSession(v2rayConfig.REMARK);
         builder.setMtu(1500);
@@ -146,7 +156,6 @@ public class V2rayVPNService extends VpnService implements V2rayServicesListener
         } catch (Exception e) {
             stopAllProcess();
         }
-
     }
 
     private void runTun2socks() {
@@ -210,7 +219,6 @@ public class V2rayVPNService extends VpnService implements V2rayServicesListener
         }, "sendFd_Thread").start();
     }
 
-
     @Override
     public void onDestroy() {
         super.onDestroy();
@@ -239,5 +247,42 @@ public class V2rayVPNService extends VpnService implements V2rayServicesListener
     @Override
     public void stopService() {
         stopAllProcess();
+    }
+
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                    "v2ray_vpn_channel", // 渠道ID
+                    "VPN Service",       // 渠道名称
+                    NotificationManager.IMPORTANCE_LOW // 低优先级
+            );
+            channel.setDescription("VPN background service");
+            channel.setShowBadge(false); // 不显示角标
+            NotificationManager nm = getSystemService(NotificationManager.class);
+            nm.createNotificationChannel(channel);
+        }
+    }
+
+    private Notification createNotification() {
+        // 创建一个 Intent，指向 Flutter 的主 Activity
+        Intent intent = new Intent(this, io.flutter.embedding.android.FlutterActivity.class);
+        // 创建 PendingIntent
+        PendingIntent pendingIntent = PendingIntent.getActivity(
+                this,
+                0,
+                intent,
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ? PendingIntent.FLAG_IMMUTABLE : 0
+        );
+
+        // 创建通知
+        return new NotificationCompat.Builder(this, "v2ray_vpn_channel")
+                .setSmallIcon(android.R.drawable.ic_dialog_info) // 使用系统默认图标
+                .setContentTitle("VPN is running")
+                .setContentText("Secure connection is active")
+                .setPriority(NotificationCompat.PRIORITY_LOW) // 低优先级
+                .setOngoing(true) // 持续显示
+                .setVisibility(NotificationCompat.VISIBILITY_SECRET) // 隐藏内容
+                .setContentIntent(pendingIntent) // 设置点击通知后的行为
+                .build();
     }
 }
