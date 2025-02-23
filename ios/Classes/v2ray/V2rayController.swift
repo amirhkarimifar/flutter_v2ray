@@ -1,25 +1,80 @@
 import Flutter
 import NetworkExtension
+import os.log
+
+let conLog = OSLog(subsystem: "com.group.sulian.app", category: "vpn_controller")
 
 public class V2rayController {
     private lazy var pligun = FlutterV2rayPlugin.shared()
 
     // 单例
     private static var sharedV2rayController: V2rayController = .init()
-
     public class func shared() -> V2rayController {
         return sharedV2rayController
     }
 
     // V2ray Core
     private lazy var coreManager: V2rayCoreManager = .shared()
-
     private var manager = NETunnelProviderManager.shared()
+
+    public init() {
+        // 注册 VPN 配置变更监听
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(vpnConfigurationChanged(_:)),
+            name: .NEVPNConfigurationChange,
+            object: nil
+        )
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    // MARK: - VPN 配置监听逻辑优化
+
+    @objc private func vpnConfigurationChanged(_ notification: Notification) {
+        NETunnelProviderManager.loadAllFromPreferences { [weak self] managers, _ in
+            guard let self = self else { return }
+
+            // 主线程执行关键操作
+            DispatchQueue.main.async {
+                let configExists = managers?.contains { manager in
+                    manager.localizedDescription == AppConfigs.APPLICATION_NAME
+                } ?? false
+
+                // 配置被删除且当前状态非断开
+                if !configExists, AppConfigs.V2RAY_STATE != .DISCONNECT {
+                    os_log("检测到 VPN 配置被用户删除，执行清理操作", log: conLog, type: .info)
+
+                    // 1. 停止核心服务
+                    self.stopV2Ray(result: { _ in })
+
+                    // 2. 强制重置状态（双重保障）
+                    AppConfigs.V2RAY_STATE = .DISCONNECT
+                    self.coreManager.V2RAY_STATE = .DISCONNECT
+
+                    // 3. 清理残留配置
+                    self.manager.removeFromPreferences { _ in
+                        self.manager = NETunnelProviderManager()
+                    }
+
+                    // 4. 通知 Flutter 更新状态
+                    self.initializeV2Ray(result: { _ in })
+                }
+            }
+        }
+    }
 
     public func initializeV2Ray(result: @escaping FlutterResult) {
         // 获取 V2RAY_STATE 的字符串表示
         let connectStatus = AppConfigs.V2RAY_STATE.description
         let stats = V2RayStats.defaultStats()
+        // 添加异常状态检测
+//        if AppConfigs.V2RAY_STATE == .DISCONNECT {
+//            stats.reset() // 重置统计计数器
+//        }
+//        
         pligun.sendEventToFlutter([
             stats.time,
             stats.uploadSpeed,
@@ -49,7 +104,6 @@ public class V2rayController {
             return
         }
 
-      
         AppConfigs.V2RAY_CONFIG = v2rayConfig
         AppConfigs.V2RAY_STATE = .CONNECTED
 
@@ -70,18 +124,16 @@ public class V2rayController {
         if AppConfigs.V2RAY_CONFIG == nil {
             return
         }
-      
+
         coreManager.startCore()
-        
+
         initializeV2Ray(result: result)
     }
 
     public func stopV2Ray(result: @escaping FlutterResult) {
         AppConfigs.V2RAY_STATE = .DISCONNECT
         coreManager.stopCore()
-       
-        
+
         initializeV2Ray(result: result)
-        
     }
 }

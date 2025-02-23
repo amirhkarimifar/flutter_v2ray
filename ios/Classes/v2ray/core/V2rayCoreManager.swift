@@ -27,7 +27,39 @@ public class V2rayCoreManager {
     private var trafficStatsTimer: Timer?
     private var startTime: Date?
 
-    public init() {}
+    public init() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(vpnConfigurationChanged(_:)),
+            name: .NEVPNConfigurationChange,
+            object: nil
+        )
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    // 处理配置变化的回调
+    @objc private func vpnConfigurationChanged(_ notification: Notification) {
+        NETunnelProviderManager.loadAllFromPreferences { [weak self] managers, _ in
+            guard let self = self else { return }
+            if let managers = managers {
+                // 检查是否存在当前应用的VPN配置
+                let configExists = managers.contains { manager in
+                    manager.localizedDescription == AppConfigs.APPLICATION_NAME
+                }
+
+                if !configExists, self.V2RAY_STATE != .DISCONNECT {
+                    // 配置被删除且当前状态非断开，则停止核心
+                    os_log("VPN configuration removed by user, stopping core.", log: appLog, type: .info)
+                    self.stopCore()
+                    // 重置manager以避免旧引用
+                    self.manager = NETunnelProviderManager()
+                }
+            }
+        }
+    }
 
     /// 设置监听器
     public func setUpListener() {
@@ -45,8 +77,7 @@ public class V2rayCoreManager {
         startNetworkMonitoring()
         print("setUpListener => Resetting service stats")
     }
-    
-    
+
     /// 加载并选择特定的 VPN 配置
     public func loadAndSelectVPNConfiguration(completion: @escaping (Error?) -> Void) {
         NETunnelProviderManager.loadAllFromPreferences { managers, error in
@@ -384,5 +415,28 @@ public class V2rayCoreManager {
         let seconds = Int(elapsedTime) % 60
 
         return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
+    }
+
+    // 在外部声明 taskId
+    var taskId: UIBackgroundTaskIdentifier = .invalid
+    // 添加后台任务的功能
+    func beginBackgroundTask() {
+        taskId = UIApplication.shared.beginBackgroundTask(withName: "VPNBackgroundTask") {
+            // 任务超时回调，停止后台任务
+            // 在回调内调用 endBackgroundTask，结束后台任务
+            self.endBackgroundTask(self.taskId)
+        }
+
+        // 启动 VPN 核心和其他后台任务
+        startCore()
+
+        // 假设每 10 分钟更新一次流量统计
+        Timer.scheduledTimer(withTimeInterval: 600, repeats: true) { _ in
+            self.getTrafficStatsAndSendToFlutter()
+        }
+    }
+
+    func endBackgroundTask(_ taskId: UIBackgroundTaskIdentifier) {
+        UIApplication.shared.endBackgroundTask(taskId)
     }
 }
