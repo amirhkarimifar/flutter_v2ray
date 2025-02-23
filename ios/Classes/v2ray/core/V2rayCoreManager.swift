@@ -23,7 +23,6 @@ public class V2rayCoreManager {
 
     var isLibV2rayCoreInitialized = false
     var V2RAY_STATE: AppConfigs.V2RAY_STATES = .DISCONNECT
-    
 
     private var trafficStatsTimer: Timer?
     private var startTime: Date?
@@ -38,7 +37,7 @@ public class V2rayCoreManager {
         // 初始化配置项
         isLibV2rayCoreInitialized = true
         V2RAY_STATE = .DISCONNECT
-        
+
         // Record the start time
         startTime = Date()
         // 调用 startTrafficStatsTimer 启动定时器
@@ -47,8 +46,9 @@ public class V2rayCoreManager {
         print("setUpListener => Resetting service stats")
     }
     
+    
     /// 加载并选择特定的 VPN 配置
-    public func loadAndSelectVPNConfiguration( completion: @escaping (Error?) -> Void) {
+    public func loadAndSelectVPNConfiguration(completion: @escaping (Error?) -> Void) {
         NETunnelProviderManager.loadAllFromPreferences { managers, error in
             guard let managers = managers, error == nil else {
                 completion(error)
@@ -66,14 +66,13 @@ public class V2rayCoreManager {
             }
         }
     }
-    
-    
+
     /// 创建新的 VPN 配置（支持自定义名称）
     private func createNewVPNConfiguration(completion: @escaping (Error?) -> Void) {
         let newManager = NETunnelProviderManager()
         newManager.protocolConfiguration = NETunnelProviderProtocol()
         newManager.protocolConfiguration?.serverAddress = AppConfigs.APPLICATION_NAME
-        newManager.localizedDescription =  AppConfigs.APPLICATION_NAME
+        newManager.localizedDescription = AppConfigs.APPLICATION_NAME
 
         newManager.saveToPreferences { error in
             guard error == nil else {
@@ -133,7 +132,7 @@ public class V2rayCoreManager {
                 if let existingManager = managers.first(where: { $0.localizedDescription == targetDescription }) {
                     // 找到匹配的配置
                     existingManager.isEnabled = true
-                    existingManager.saveToPreferences { error in
+                    existingManager.saveToPreferences { _ in
                         existingManager.loadFromPreferences { _ in
                             self.manager = existingManager
                             self.startVPNTunnel()
@@ -153,7 +152,7 @@ public class V2rayCoreManager {
 
         managerToUse.isEnabled = true
         managerToUse.protocolConfiguration = tunnelProtocol
-        managerToUse.localizedDescription = "速联"
+        managerToUse.localizedDescription = AppConfigs.APPLICATION_NAME
 
         managerToUse.saveToPreferences { error in
             if let error = error {
@@ -163,10 +162,9 @@ public class V2rayCoreManager {
                 if manager == nil {
                     self.manager = managerToUse
                 }
-                managerToUse.loadFromPreferences {error in
+                managerToUse.loadFromPreferences { _ in
                     self.startVPNTunnel()
                 }
-               
             }
         }
     }
@@ -177,17 +175,16 @@ public class V2rayCoreManager {
 
         managerToUse.isEnabled = true
         managerToUse.protocolConfiguration = tunnelProtocol
-        managerToUse.localizedDescription = "速联"
+        managerToUse.localizedDescription = AppConfigs.APPLICATION_NAME
 
         managerToUse.saveToPreferences { error in
             if let error = error {
                 os_log("saveAndStartTunnel Failed to save VPN configuration:  %{public}@", log: appLog, type: .error, error.localizedDescription)
             } else {
                 self.manager = managerToUse
-                managerToUse.loadFromPreferences {error in
+                managerToUse.loadFromPreferences { _ in
                     self.startVPNTunnel()
                 }
-               
             }
         }
     }
