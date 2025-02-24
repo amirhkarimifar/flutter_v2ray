@@ -27,40 +27,6 @@ public class V2rayCoreManager {
     private var trafficStatsTimer: Timer?
     private var startTime: Date?
 
-    public init() {
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(vpnConfigurationChanged(_:)),
-            name: .NEVPNConfigurationChange,
-            object: nil
-        )
-    }
-
-    deinit {
-        NotificationCenter.default.removeObserver(self)
-    }
-
-    // 处理配置变化的回调
-    @objc private func vpnConfigurationChanged(_ notification: Notification) {
-        NETunnelProviderManager.loadAllFromPreferences { [weak self] managers, _ in
-            guard let self = self else { return }
-            if let managers = managers {
-                // 检查是否存在当前应用的VPN配置
-                let configExists = managers.contains { manager in
-                    manager.localizedDescription == AppConfigs.APPLICATION_NAME
-                }
-
-                if !configExists, self.V2RAY_STATE != .DISCONNECT {
-                    // 配置被删除且当前状态非断开，则停止核心
-                    os_log("VPN configuration removed by user, stopping core.", log: appLog, type: .info)
-                    self.stopCore()
-                    // 重置manager以避免旧引用
-                    self.manager = NETunnelProviderManager()
-                }
-            }
-        }
-    }
-
     /// 设置监听器
     public func setUpListener() {
         stopTrafficStatsTimer()
