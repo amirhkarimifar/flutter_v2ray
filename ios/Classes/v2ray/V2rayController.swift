@@ -70,11 +70,7 @@ public class V2rayController {
         // 获取 V2RAY_STATE 的字符串表示
         let connectStatus = AppConfigs.V2RAY_STATE.description
         let stats = V2RayStats.defaultStats()
-        // 添加异常状态检测
-//        if AppConfigs.V2RAY_STATE == .DISCONNECT {
-//            stats.reset() // 重置统计计数器
-//        }
-//        
+
         pligun.sendEventToFlutter([
             stats.time,
             stats.uploadSpeed,
