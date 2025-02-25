@@ -17,6 +17,7 @@ public class FlutterV2rayPlugin: NSObject, FlutterPlugin {
     public class func shared() -> FlutterV2rayPlugin {
         return sharedFlutterV2rayPlugin
     }
+    
 
     // 注册插件到 Flutter 引擎
     public static func register(with registrar: FlutterPluginRegistrar) {
@@ -74,7 +75,6 @@ public class FlutterV2rayPlugin: NSObject, FlutterPlugin {
     // 处理停止 V2Ray 的方法
     private func handleStopV2Ray(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         controller.stopV2Ray(result: result)
-
     }
 
     /// 处理 handleInitializeV2Ray

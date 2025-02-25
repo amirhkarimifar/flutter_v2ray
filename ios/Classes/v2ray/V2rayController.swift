@@ -47,20 +47,20 @@ public class V2rayController {
                 if !configExists, AppConfigs.V2RAY_STATE != .DISCONNECT {
                     os_log("检测到 VPN 配置被用户删除，执行清理操作", log: conLog, type: .info)
 
-                    // 1. 停止核心服务
-                    self.stopV2Ray(result: { _ in })
-
-                    // 2. 强制重置状态（双重保障）
                     AppConfigs.V2RAY_STATE = .DISCONNECT
-                    self.coreManager.V2RAY_STATE = .DISCONNECT
+                    self.coreManager.stopCore()
+                    // 获取 V2RAY_STATE 的字符串表示
+                    let connectStatus = AppConfigs.V2RAY_STATE.description
+                    let stats = V2RayStats.defaultStats()
 
-                    // 3. 清理残留配置
-                    self.manager.removeFromPreferences { _ in
-                        self.manager = NETunnelProviderManager()
-                    }
-
-                    // 4. 通知 Flutter 更新状态
-                    self.initializeV2Ray(result: { _ in })
+                    self.pligun.sendEventToFlutter([
+                        stats.time,
+                        stats.uploadSpeed,
+                        stats.downloadSpeed,
+                        stats.totalUpload,
+                        stats.totalDownload,
+                        connectStatus // 当前状态
+                    ])
                 }
             }
         }
@@ -70,11 +70,7 @@ public class V2rayController {
         // 获取 V2RAY_STATE 的字符串表示
         let connectStatus = AppConfigs.V2RAY_STATE.description
         let stats = V2RayStats.defaultStats()
-        // 添加异常状态检测
-//        if AppConfigs.V2RAY_STATE == .DISCONNECT {
-//            stats.reset() // 重置统计计数器
-//        }
-//        
+
         pligun.sendEventToFlutter([
             stats.time,
             stats.uploadSpeed,
