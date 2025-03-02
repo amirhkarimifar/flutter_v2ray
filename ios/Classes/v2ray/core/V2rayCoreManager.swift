@@ -41,7 +41,7 @@ public class V2rayCoreManager {
         // 调用 startTrafficStatsTimer 启动定时器
         startTrafficStatsTimer()
         startNetworkMonitoring()
-        print("setUpListener => Resetting service stats")
+//        print("setUpListener => Resetting service stats")
     }
 
     /// 加载并选择特定的 VPN 配置
