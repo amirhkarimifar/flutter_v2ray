@@ -27,6 +27,7 @@ public class V2rayCoreManager {
     private var trafficStatsTimer: Timer?
     private var startTime: Date?
 
+
     /// 设置监听器
     public func setUpListener() {
         stopTrafficStatsTimer()
@@ -360,7 +361,7 @@ public class V2rayCoreManager {
     // 定时每1秒调用一次
     func startTrafficStatsTimer() {
         trafficStatsTimer?.invalidate()
-        trafficStatsTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+        trafficStatsTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
             self?.getTrafficStatsAndSendToFlutter()
         }
     }
@@ -383,26 +384,5 @@ public class V2rayCoreManager {
         return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
     }
 
-    // 在外部声明 taskId
-    var taskId: UIBackgroundTaskIdentifier = .invalid
-    // 添加后台任务的功能
-    func beginBackgroundTask() {
-        taskId = UIApplication.shared.beginBackgroundTask(withName: "VPNBackgroundTask") {
-            // 任务超时回调，停止后台任务
-            // 在回调内调用 endBackgroundTask，结束后台任务
-            self.endBackgroundTask(self.taskId)
-        }
-
-        // 启动 VPN 核心和其他后台任务
-        startCore()
-
-        // 假设每 10 分钟更新一次流量统计
-        Timer.scheduledTimer(withTimeInterval: 600, repeats: true) { _ in
-            self.getTrafficStatsAndSendToFlutter()
-        }
-    }
-
-    func endBackgroundTask(_ taskId: UIBackgroundTaskIdentifier) {
-        UIApplication.shared.endBackgroundTask(taskId)
-    }
+   
 }
