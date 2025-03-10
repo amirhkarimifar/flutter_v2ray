@@ -17,7 +17,6 @@ public class FlutterV2rayPlugin: NSObject, FlutterPlugin {
     public class func shared() -> FlutterV2rayPlugin {
         return sharedFlutterV2rayPlugin
     }
-    
 
     // 注册插件到 Flutter 引擎
     public static func register(with registrar: FlutterPluginRegistrar) {
@@ -40,7 +39,8 @@ public class FlutterV2rayPlugin: NSObject, FlutterPlugin {
         "getServerDelay": handleGetServerDelay, // 获取服务器延迟
         "getConnectedServerDelay": handleGetConnectedServerDelay, // 获取已连接服务器的延迟
         "requestPermission": handleRequestPermission, // 请求 VPN 权限
-        "getCoreVersion": handleGetCoreVersion // 获取核心版本号
+        "getCoreVersion": handleGetCoreVersion, // 获取核心版本号
+        "checkVPNState": handleCheckVPNState, // 检查VPN
     ]
 
     // 主方法调用处理函数，匹配方法名并调用相应的处理器
@@ -142,6 +142,11 @@ public class FlutterV2rayPlugin: NSObject, FlutterPlugin {
         } else {
             result(nil)
         }
+    }
+
+    // 检查VPN
+    private func handleCheckVPNState(_ call: FlutterMethodCall, result: FlutterResult) {
+        VPNConfigValidator.checkInitialState()
     }
 
     // 获取服务器延迟
