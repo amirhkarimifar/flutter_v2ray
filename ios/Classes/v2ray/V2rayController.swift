@@ -17,54 +17,55 @@ public class V2rayController {
     private lazy var coreManager: V2rayCoreManager = .shared()
     private var manager = NETunnelProviderManager.shared()
 
-    public init() {
-        // 注册 VPN 配置变更监听
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(vpnConfigurationChanged(_:)),
-            name: .NEVPNConfigurationChange,
-            object: nil
-        )
-    }
+//
+//    public init() {
+//        // 注册 VPN 配置变更监听
+//        NotificationCenter.default.addObserver(
+//            self,
+//            selector: #selector(vpnConfigurationChanged(_:)),
+//            name: .NEVPNConfigurationChange,
+//            object: nil
+//        )
+//    }
+//
+//    deinit {
+//        NotificationCenter.default.removeObserver(self)
+//    }
 
-    deinit {
-        NotificationCenter.default.removeObserver(self)
-    }
-
-    // MARK: - VPN 配置监听逻辑优化
-
-    @objc private func vpnConfigurationChanged(_ notification: Notification) {
-        NETunnelProviderManager.loadAllFromPreferences { [weak self] managers, _ in
-            guard let self = self else { return }
-
-            // 主线程执行关键操作
-            DispatchQueue.main.async {
-                let configExists = managers?.contains { manager in
-                    manager.localizedDescription == AppConfigs.APPLICATION_NAME
-                } ?? false
-
-                // 配置被删除且当前状态非断开
-                if !configExists, AppConfigs.V2RAY_STATE != .DISCONNECT {
-                    os_log("检测到 VPN 配置被用户删除，执行清理操作", log: conLog, type: .info)
-
-                    AppConfigs.V2RAY_STATE = .DISCONNECT
-                    self.coreManager.stopCore()
-                    // 获取 V2RAY_STATE 的字符串表示
-                    let connectStatus = AppConfigs.V2RAY_STATE.description
-                    let stats = V2RayStats.defaultStats()
-
-                    self.pligun.sendEventToFlutter([
-                        stats.time,
-                        stats.uploadSpeed,
-                        stats.downloadSpeed,
-                        stats.totalUpload,
-                        stats.totalDownload,
-                        connectStatus // 当前状态
-                    ])
-                }
-            }
-        }
-    }
+//    // MARK: - VPN 配置监听逻辑优化
+//
+//    @objc private func vpnConfigurationChanged(_ notification: Notification) {
+//        NETunnelProviderManager.loadAllFromPreferences { [weak self] managers, _ in
+//            guard let self = self else { return }
+//
+//            // 主线程执行关键操作
+//            DispatchQueue.main.async {
+//                let configExists = managers?.contains { manager in
+//                    manager.localizedDescription == AppConfigs.APPLICATION_NAME
+//                } ?? false
+//
+//                // 配置被删除且当前状态非断开
+//                if !configExists, AppConfigs.V2RAY_STATE != .DISCONNECT {
+//                    os_log("检测到 VPN 配置被用户删除，执行清理操作", log: conLog, type: .info)
+//
+//                    AppConfigs.V2RAY_STATE = .DISCONNECT
+//                    self.coreManager.stopCore()
+//                    // 获取 V2RAY_STATE 的字符串表示
+//                    let connectStatus = AppConfigs.V2RAY_STATE.description
+//                    let stats = V2RayStats.defaultStats()
+//
+//                    self.pligun.sendEventToFlutter([
+//                        stats.time,
+//                        stats.uploadSpeed,
+//                        stats.downloadSpeed,
+//                        stats.totalUpload,
+//                        stats.totalDownload,
+//                        connectStatus // 当前状态
+//                    ])
+//                }
+//            }
+//        }
+//    }
 
     public func initializeV2Ray(result: @escaping FlutterResult) {
         // 获取 V2RAY_STATE 的字符串表示
