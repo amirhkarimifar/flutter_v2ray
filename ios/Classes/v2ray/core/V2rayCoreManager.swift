@@ -18,8 +18,6 @@ public class V2rayCoreManager {
     }
 
     private var manager = NETunnelProviderManager.shared()
-//    private var networkMonitor: NWPathMonitor?
-//    private var lastNetworkType: String? // 记录最后一次的网络类型
 
     var isLibV2rayCoreInitialized = false
     var V2RAY_STATE: AppConfigs.V2RAY_STATES = .DISCONNECT
@@ -31,7 +29,6 @@ public class V2rayCoreManager {
     /// 设置监听器
     public func setUpListener() {
         stopTrafficStatsTimer()
-//        stopNetworkMonitoring()
 
         // 初始化配置项
         isLibV2rayCoreInitialized = true
@@ -41,8 +38,6 @@ public class V2rayCoreManager {
         startTime = Date()
         // 调用 startTrafficStatsTimer 启动定时器
         startTrafficStatsTimer()
-//        startNetworkMonitoring()
-//        print("setUpListener => Resetting service stats")
     }
 
     /// 加载并选择特定的 VPN 配置
@@ -100,11 +95,6 @@ public class V2rayCoreManager {
         let tunnelProtocol = createVPNProtocol(vmess: vmess, port: port)
 
         loadVPNConfigurationAndStartTunnel(with: tunnelProtocol)
-
-        // 记录启动时的网络类型
-//        if let path = networkMonitor?.currentPath {
-//            lastNetworkType = getNetworkTypeDescription(path)
-//        }
     }
 
     /// 创建VPN协议
@@ -229,64 +219,8 @@ public class V2rayCoreManager {
         manager.connection.stopVPNTunnel()
 
         stopTrafficStatsTimer()
-//        stopNetworkMonitoring()
         os_log("VPN core stopped successfully.", log: appLog, type: .info)
     }
-
-//    /// 启动网络监听
-//    public func startNetworkMonitoring() {
-//        networkMonitor = NWPathMonitor()
-//        let monitorQueue = DispatchQueue(label: "NetworkMonitorQueue")
-//
-//        networkMonitor?.pathUpdateHandler = { [weak self] path in
-//            guard let self = self else { return }
-//
-//            // 获取当前的网络类型
-//            let currentNetworkType = self.getNetworkTypeDescription(path)
-//
-//            // 只有在网络类型发生变化时才执行
-//            if self.lastNetworkType != currentNetworkType {
-//                os_log("Network type changed, current: %{public}@, last: %{public}@", log: appLog, type: .info, currentNetworkType, self.lastNetworkType ?? "None")
-//
-//                // 判断从 Wi-Fi 到数据网络，或从数据网络到 Wi-Fi
-//                if (self.lastNetworkType == "WiFi" && currentNetworkType == "Cellular") ||
-//                    (self.lastNetworkType == "Cellular" && currentNetworkType == "WiFi")
-//                {
-//                    // 网络发生变化时才触发重启 VPN
-//                    os_log("Network change detected, restarting VPN.", log: appLog, type: .info)
-//
-//                    // 只有在 VPN 已连接的情况下才重启 VPN
-//                    if self.V2RAY_STATE == .CONNECTED {
-////                        self.stopCore()
-//                        self.startCore()
-//                    }
-//                }
-//
-//                // 更新上次的网络类型
-//                self.lastNetworkType = currentNetworkType
-//            }
-//        }
-//
-//        networkMonitor?.start(queue: monitorQueue)
-//    }
-//
-//    public func stopNetworkMonitoring() {
-//        networkMonitor?.cancel() // 停止网络监听
-//        networkMonitor = nil // 释放监视器
-//    }
-//
-//    /// 获取网络类型描述
-//    private func getNetworkTypeDescription(_ path: Network.NWPath) -> String { // 添加 Network. 前缀
-//        if path.usesInterfaceType(.wifi) {
-//            return "WiFi"
-//        } else if path.usesInterfaceType(.cellular) {
-//            return "Cellular"
-//        } else if path.usesInterfaceType(.wiredEthernet) {
-//            return "Wired Ethernet"
-//        } else {
-//            return "Other"
-//        }
-//    }
 
     // 封装获取流量统计和发送到 Flutter 的功能
     func getTrafficStatsAndSendToFlutter() {
