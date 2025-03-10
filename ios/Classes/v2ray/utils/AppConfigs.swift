@@ -25,6 +25,9 @@ class AppConfigs {
 
     /// 连接状态
     static var NOTIFICATION_DISCONNECT_BUTTON_NAME: String = "DISCONNECT"
+    
+    /// IOS的 BundleIdentifier
+    static var BUNDLE_IDENTIFIER = "com.sulian.app.v2.tunnel"
 
     /// V2Ray 服务命令的枚举，定义可以执行的操作。
     enum V2RAY_SERVICE_COMMANDS {

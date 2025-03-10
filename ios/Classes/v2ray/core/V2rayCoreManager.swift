@@ -102,6 +102,7 @@ public class V2rayCoreManager {
         let tunnelProtocol = NETunnelProviderProtocol()
         tunnelProtocol.serverAddress = AppConfigs.APPLICATION_NAME
         tunnelProtocol.providerConfiguration = ["vmess": vmess, "port": port]
+        tunnelProtocol.providerBundleIdentifier = AppConfigs.BUNDLE_IDENTIFIER
         return tunnelProtocol
     }
 

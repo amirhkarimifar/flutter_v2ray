@@ -17,6 +17,10 @@ public class V2rayController {
     private lazy var coreManager: V2rayCoreManager = .shared()
     private var manager = NETunnelProviderManager.shared()
 
+    public init() {
+        VPNConfigValidator.checkInitialState()
+    }
+
 //
 //    public init() {
 //        // 注册 VPN 配置变更监听
