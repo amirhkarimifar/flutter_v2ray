@@ -88,7 +88,7 @@ class MethodChannelFlutterV2ray extends FlutterV2rayPlatform {
   }
 
   @override
-  Future<String> checkVPNState() async {
-    return await methodChannel.invokeMethod('checkVPNState');
+  Future<void> checkVPNState() async {
+    await methodChannel.invokeMethod('checkVPNState');
   }
 }

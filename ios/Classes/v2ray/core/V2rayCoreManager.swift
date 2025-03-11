@@ -208,10 +208,10 @@ public class V2rayCoreManager {
     /// 停止核心逻辑
     public func stopCore() {
         // 确保 VPN 状态为断开连接
-        guard manager.connection.status != .disconnected else {
-            os_log("VPN is already disconnected.", log: appLog, type: .info)
-            return
-        }
+//        guard manager.connection.status != .disconnected else {
+//            os_log("VPN is already disconnected.", log: appLog, type: .info)
+//            return
+//        }
         // 更新内部状态
         V2RAY_STATE = .DISCONNECT
 

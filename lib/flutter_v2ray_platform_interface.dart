@@ -67,7 +67,7 @@ abstract class FlutterV2rayPlatform extends PlatformInterface {
     );
   }
 
-  Future<String> checkVPNState() async {
+  Future<void> checkVPNState() async {
     throw UnimplementedError(
       'checkVPNState() has not been implemented.',
     );

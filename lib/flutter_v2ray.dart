@@ -126,7 +126,7 @@ class FlutterV2ray {
     return await FlutterV2rayPlatform.instance.getCoreVersion();
   }
 
-  Future<String> checkVPNState() async {
+  Future<void> checkVPNState() async {
     return await FlutterV2rayPlatform.instance.checkVPNState();
   }
 

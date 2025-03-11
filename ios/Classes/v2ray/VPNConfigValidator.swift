@@ -1,8 +1,18 @@
+import Flutter
 import NetworkExtension
 
 public class VPNConfigValidator {
-    /// 初始化时同步检查（阻塞式，建议在启动时调用）
-    class func checkInitialState() {
+    // V2Ray 控制器的单例实例
+    private lazy var controller: V2rayController = .shared()
+    
+    // 单例
+    private static var sharedVPNConfigValidator: VPNConfigValidator = .init()
+    public class func shared() -> VPNConfigValidator {
+        return sharedVPNConfigValidator
+    }
+ 
+    /// 初始化时同步检查
+    public func checkInitialState(result: @escaping FlutterResult) {
         let semaphore = DispatchSemaphore(value: 0)
         var isValid = false
         
@@ -26,27 +36,12 @@ public class VPNConfigValidator {
             
             isValid = configExists && isActiveValid
             
-            if !isValid {
-                self.cleanupInvalidState()
+            // 执行回调
+            DispatchQueue.main.async {
+                if !isValid {
+                    self.controller.stopV2Ray(result: result)
+                }
             }
         }
-        
-        // 最多等待2秒获取结果
-        _ = semaphore.wait(timeout: .now() + 2.0)
-        
-        // 3. 更新全局状态
-//        AppState.shared.isVPNValid = isValid
-    }
-    
-    /// 清理失效状态
-    private class func cleanupInvalidState() {
-        // 断开可能的残留连接
-//        VPNConnector.shared.disconnect()
-//
-//        // 清除本地存储的VPN配置
-//        KeychainManager.delete(configID: SharedConfig.vpnBundleID)
-//
-//        // 通知Flutter更新UI
-//        EventDispatcher.send(.vpnConfigInvalid)
     }
 }

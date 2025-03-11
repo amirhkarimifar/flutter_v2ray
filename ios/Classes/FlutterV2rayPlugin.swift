@@ -11,6 +11,8 @@ public class FlutterV2rayPlugin: NSObject, FlutterPlugin {
     private lazy var controller: V2rayController = .shared()
     // V2Ray 核心管理器的单例实例
     private lazy var coreManager: V2rayCoreManager = .shared()
+    private lazy var vpnConifg: VPNConfigValidator = .shared()
+
 
     private static var sharedFlutterV2rayPlugin: FlutterV2rayPlugin = .init()
 
@@ -145,8 +147,8 @@ public class FlutterV2rayPlugin: NSObject, FlutterPlugin {
     }
 
     // 检查VPN
-    private func handleCheckVPNState(_ call: FlutterMethodCall, result: FlutterResult) {
-        VPNConfigValidator.checkInitialState()
+    private func handleCheckVPNState(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+        vpnConifg.checkInitialState(result: result);
     }
 
     // 获取服务器延迟
