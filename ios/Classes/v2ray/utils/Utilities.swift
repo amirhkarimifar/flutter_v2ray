@@ -60,6 +60,7 @@ class Utilities {
         v2rayConfig.APPLICATION_ICON = AppConfigs.APPLICATION_ICON // 设置应用图标
         v2rayConfig.APPLICATION_NAME = AppConfigs.APPLICATION_NAME // 设置应用名称
         v2rayConfig.NOTIFICATION_DISCONNECT_BUTTON_NAME = AppConfigs.NOTIFICATION_DISCONNECT_BUTTON_NAME
+        
         do {
             // 将 JSON 字符串转换为字典
             if let configData = config.data(using: .utf8),

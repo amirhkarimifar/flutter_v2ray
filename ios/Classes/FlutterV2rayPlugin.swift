@@ -13,7 +13,6 @@ public class FlutterV2rayPlugin: NSObject, FlutterPlugin {
     private lazy var coreManager: V2rayCoreManager = .shared()
     private lazy var vpnConifg: VPNConfigValidator = .shared()
 
-
     private static var sharedFlutterV2rayPlugin: FlutterV2rayPlugin = .init()
 
     public class func shared() -> FlutterV2rayPlugin {
@@ -148,7 +147,23 @@ public class FlutterV2rayPlugin: NSObject, FlutterPlugin {
 
     // 检查VPN
     private func handleCheckVPNState(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-        vpnConifg.checkInitialState(result: result);
+        vpnConifg.checkInitialState { isValid in
+            if isValid == true {
+//                print("isValid \(isValid)")
+                // 获取 V2RAY_STATE 的字符串表示
+                let connectStatus = AppConfigs.V2RAY_STATES.CONNECTED.description
+                let stats = V2RayStats.defaultStats()
+
+                self.sendEventToFlutter([
+                    stats.time,
+                    stats.uploadSpeed,
+                    stats.downloadSpeed,
+                    stats.totalUpload,
+                    stats.totalDownload,
+                    connectStatus, // 当前状态
+                ])
+            }
+        }
     }
 
     // 获取服务器延迟

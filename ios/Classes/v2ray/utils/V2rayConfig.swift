@@ -1,4 +1,7 @@
 class V2rayConfig: NSObject {
+    // 单例实例
+    static let shared = V2rayConfig()
+    
     // 连接的 V2Ray 服务器地址
     var CONNECTED_V2RAY_SERVER_ADDRESS: String = ""
     // 连接的 V2Ray 服务器端口
@@ -24,8 +27,7 @@ class V2rayConfig: NSObject {
     // 通知按钮名称
     var NOTIFICATION_DISCONNECT_BUTTON_NAME: String = "DISCONNECT"
 
-    // 单例实例
-    static let shared = V2rayConfig()
+   
 
     override private init() {
         super.init()
