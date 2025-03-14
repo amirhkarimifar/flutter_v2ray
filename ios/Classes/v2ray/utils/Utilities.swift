@@ -54,13 +54,14 @@ class Utilities {
     /// - Returns: V2rayConfig 对象，或在失败时返回 nil
     static func parseV2rayJsonFile(remark: String, config: String, blockedApplication: [String], bypassSubnets: [String]) -> V2rayConfig? {
         let v2rayConfig = V2rayConfig.shared // 创建 V2rayConfig 实例
+        v2rayConfig.V2RAT_JSON_CONFIG = config // 未格式化配置
         v2rayConfig.REMARK = remark // 设置备注
         v2rayConfig.BLOCKED_APPS = blockedApplication // 设置被阻止的应用
         v2rayConfig.BYPASS_SUBNETS = bypassSubnets // 设置绕过的子网
         v2rayConfig.APPLICATION_ICON = AppConfigs.APPLICATION_ICON // 设置应用图标
         v2rayConfig.APPLICATION_NAME = AppConfigs.APPLICATION_NAME // 设置应用名称
         v2rayConfig.NOTIFICATION_DISCONNECT_BUTTON_NAME = AppConfigs.NOTIFICATION_DISCONNECT_BUTTON_NAME
-        
+
         do {
             // 将 JSON 字符串转换为字典
             if let configData = config.data(using: .utf8),

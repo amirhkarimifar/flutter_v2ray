@@ -151,6 +151,7 @@ public class FlutterV2rayPlugin: NSObject, FlutterPlugin {
             if isValid == true {
 //                print("isValid \(isValid)")
                 // 获取 V2RAY_STATE 的字符串表示
+                
                 let connectStatus = AppConfigs.V2RAY_STATES.CONNECTED.description
                 let stats = V2RayStats.defaultStats()
 
@@ -162,6 +163,8 @@ public class FlutterV2rayPlugin: NSObject, FlutterPlugin {
                     stats.totalDownload,
                     connectStatus, // 当前状态
                 ])
+            } else {
+                self.controller.stopV2Ray(result: result)
             }
         }
     }

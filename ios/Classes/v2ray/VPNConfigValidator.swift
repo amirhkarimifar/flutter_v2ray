@@ -23,11 +23,8 @@ public class VPNConfigValidator {
         guard let connection = manager?.connection else { return false }
         
         switch connection.status {
-        case .connected:
+        case .connected, .connecting, .reasserting:  // 合并三种有效状态
             return true
-        case .connecting, .reasserting:
-            print("VPN正在连接中...")
-            return false
         default:
             return false
         }

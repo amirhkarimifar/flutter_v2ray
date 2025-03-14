@@ -1,7 +1,7 @@
 class V2rayConfig: NSObject {
     // 单例实例
     static let shared = V2rayConfig()
-    
+
     // 连接的 V2Ray 服务器地址
     var CONNECTED_V2RAY_SERVER_ADDRESS: String = ""
     // 连接的 V2Ray 服务器端口
@@ -14,6 +14,8 @@ class V2rayConfig: NSObject {
     var BLOCKED_APPS: [String]? = nil
     // 绕过的子网列表
     var BYPASS_SUBNETS: [String]? = nil
+    // 未格式化配置
+    var V2RAT_JSON_CONFIG: String = ""
     // 完整的 V2Ray JSON 配置
     var V2RAY_FULL_JSON_CONFIG: String? = nil
     // 是否启用流量统计
@@ -26,8 +28,6 @@ class V2rayConfig: NSObject {
     var APPLICATION_ICON: Int = 0
     // 通知按钮名称
     var NOTIFICATION_DISCONNECT_BUTTON_NAME: String = "DISCONNECT"
-
-   
 
     override private init() {
         super.init()

@@ -25,7 +25,6 @@ public class V2rayCoreManager {
     private var trafficStatsTimer: Timer?
     private var startTime: Date?
 
-
     /// 设置监听器
     public func setUpListener() {
         stopTrafficStatsTimer()
@@ -182,7 +181,7 @@ public class V2rayCoreManager {
     private func startVPNTunnel() {
         do {
             try manager.connection.startVPNTunnel()
-            os_log("VPN tunnel started successfully", log: appLog, type: .info)
+            os_log("VPN 核心已启用", log: appLog, type: .info)
         } catch let vpnError as NSError {
             os_log("Failed to start VPN tunnel: %{public}@", log: appLog, type: .error, vpnError.localizedDescription)
             os_log("Error code: %{public}d", log: appLog, type: .error, vpnError.code)
@@ -207,20 +206,40 @@ public class V2rayCoreManager {
 
     /// 停止核心逻辑
     public func stopCore() {
-        // 确保 VPN 状态为断开连接
-//        guard manager.connection.status != .disconnected else {
-//            os_log("VPN is already disconnected.", log: appLog, type: .info)
-//            return
-//        }
-        // 更新内部状态
-        V2RAY_STATE = .DISCONNECT
+        NETunnelProviderManager.loadAllFromPreferences { managers, error in
+            guard let managers = managers, error == nil else {
+                return
+            }
 
-        manager.isEnabled = false
-        // 尝试断开 VPN 隧道
-        manager.connection.stopVPNTunnel()
+            // 查找特定的 VPN 配置
+            if let targetManager = managers.first(where: { $0.localizedDescription == AppConfigs.APPLICATION_NAME }) {
+                // 找到匹配的配置
+                self.manager = targetManager
+                self.manager.loadFromPreferences { [weak self] error in
+                    guard let self = self else { return }
+                    if let error = error {
+                        os_log("加载配置失败: %@", log: appLog, type: .error, error.localizedDescription)
+                        return
+                    }
 
-        stopTrafficStatsTimer()
-        os_log("VPN core stopped successfully.", log: appLog, type: .info)
+                    // 更新内部状态
+                    V2RAY_STATE = .DISCONNECT
+
+//                    self.manager.isEnabled = false
+                    self.manager.saveToPreferences { error in
+                        if let error = error {
+                            os_log("保存配置失败: %@", log: appLog, type: .error, error.localizedDescription)
+                            return
+                        }
+
+                        // 确认配置已保存后再停止隧道
+                        self.manager.connection.stopVPNTunnel()
+                        self.stopTrafficStatsTimer()
+                        os_log("VPN 核心已停止", log: appLog, type: .info)
+                    }
+                }
+            }
+        }
     }
 
     // 封装获取流量统计和发送到 Flutter 的功能
@@ -318,6 +337,4 @@ public class V2rayCoreManager {
 
         return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
     }
-
-   
 }
