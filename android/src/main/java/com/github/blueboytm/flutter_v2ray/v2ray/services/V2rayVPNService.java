@@ -193,9 +193,11 @@ public class V2rayVPNService extends VpnService implements V2rayServicesListener
         FileDescriptor tunFd = mInterface.getFileDescriptor();
         new Thread(() -> {
             int tries = 0;
+            int maxRetries = 10;
+            long initialDelay = 100L;
             while (true) {
                 try {
-                    Thread.sleep(50L * tries);
+                    Thread.sleep(initialDelay * (1 << tries)); // 指数退避
                     LocalSocket clientLocalSocket = new LocalSocket();
                     clientLocalSocket.connect(new LocalSocketAddress(localSocksFile, LocalSocketAddress.Namespace.FILESYSTEM));
                     if (!clientLocalSocket.isConnected()) {

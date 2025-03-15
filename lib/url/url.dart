@@ -30,6 +30,13 @@ abstract class V2RayURL {
     "allocate": null
   };
 
+  Map<String, dynamic> inbound1 = {
+  };
+
+  Map<String, dynamic> inbound2 = {
+  };
+
+
   Map<String, dynamic> log = {
     "access": "",
     "error": "",
@@ -98,7 +105,7 @@ abstract class V2RayURL {
 
   Map<String, dynamic> get fullConfiguration => {
         "log": log,
-        "inbounds": [inbound],
+        "inbounds": [inbound, inbound1, inbound2],
         "outbounds": [outbound1, outbound2, outbound3],
         "dns": dns,
         "routing": routing,
