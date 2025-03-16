@@ -4,7 +4,7 @@ abstract class V2RayURL {
   V2RayURL({required this.url});
   final String url;
 
-  bool get allowInsecure => true;
+  bool get allowInsecure => false;
   String get security => "auto";
   int get level => 8;
   int get port => 443;

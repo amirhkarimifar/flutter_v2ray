@@ -6,6 +6,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
+import android.net.InetAddresses;
 import android.net.LocalSocket;
 import android.net.LocalSocketAddress;
 import android.net.VpnService;
@@ -133,13 +134,15 @@ public class V2rayVPNService extends VpnService implements V2rayServicesListener
             JSONObject json = new JSONObject(v2rayConfig.V2RAY_FULL_JSON_CONFIG);
             JSONObject dnsObject = json.getJSONObject("dns");
             JSONArray serversArray = dnsObject.getJSONArray("servers");
+
             for (int i = 0; i < serversArray.length(); i++) {
-                String server = serversArray.getString(i);
-                builder.addDnsServer(server);
+                Object serverEntry = serversArray.get(i);
+                handleDnsServerEntry(builder, serverEntry);
             }
         } catch (JSONException e) {
-            e.printStackTrace();
+            Log.e("DNS Config", "JSON parsing error", e);
         }
+
         try {
             mInterface.close();
         } catch (Exception e) {
@@ -156,6 +159,73 @@ public class V2rayVPNService extends VpnService implements V2rayServicesListener
         } catch (Exception e) {
             stopAllProcess();
         }
+    }
+
+    /**
+     * 处理单个DNS服务器条目
+     */
+    private void handleDnsServerEntry(Builder builder, Object serverEntry) {
+        try {
+            if (serverEntry instanceof String) {
+                handleStringDnsEntry(builder, (String) serverEntry);
+            } else if (serverEntry instanceof JSONObject) {
+                handleObjectDnsEntry(builder, (JSONObject) serverEntry);
+            } else {
+                Log.w("DNS Config", "Unsupported DNS entry type: " + serverEntry.getClass().getSimpleName());
+            }
+        } catch (Exception e) {
+            Log.e("DNS Config", "Error processing DNS entry: " + serverEntry, e);
+        }
+    }
+
+    /**
+     * 处理字符串类型DNS条目
+     */
+    private void handleStringDnsEntry(Builder builder, String entry) {
+        String cleanedIp = entry.split(":")[0]; // 处理带端口的情况如"1.1.1.1:53"
+        if (isValidIpAddress(cleanedIp)) {
+            builder.addDnsServer(cleanedIp);
+            Log.d("DNS Config", "Added simple DNS: " + cleanedIp);
+        } else {
+            Log.w("DNS Config", "Invalid IP format: " + entry);
+        }
+    }
+
+    /**
+     * 处理对象类型DNS条目
+     */
+    private void handleObjectDnsEntry(Builder builder, JSONObject entry) {
+        try {
+            String address = entry.getString("address");
+            String cleanedIp = address.split(":")[0]; // 提取IP部分
+
+            if (isValidIpAddress(cleanedIp)) {
+                builder.addDnsServer(cleanedIp);
+                Log.d("DNS Config", "Added object DNS: " + cleanedIp);
+
+                // 可选：记录高级参数（实际VPN层不处理这些）
+                if (entry.has("port")) {
+                    Log.d("DNS Config", "DNS port config detected (handled by v2ray core): " + entry.getInt("port"));
+                }
+            } else {
+                Log.w("DNS Config", "Invalid IP in DNS object: " + entry);
+            }
+        } catch (JSONException e) {
+            Log.w("DNS Config", "Malformed DNS object: " + entry, e);
+        }
+    }
+
+    /**
+     * IP地址验证（兼容IPv4/IPv6）
+     */
+    private boolean isValidIpAddress(String ip) {
+        if (ip == null || ip.isEmpty()) return false;
+
+        // 使用AndroidX核心工具验证
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            return InetAddresses.isNumericAddress(ip);
+        }
+        return false;
     }
 
     private void runTun2socks() {
@@ -193,7 +263,6 @@ public class V2rayVPNService extends VpnService implements V2rayServicesListener
         FileDescriptor tunFd = mInterface.getFileDescriptor();
         new Thread(() -> {
             int tries = 0;
-            int maxRetries = 10;
             long initialDelay = 100L;
             while (true) {
                 try {
