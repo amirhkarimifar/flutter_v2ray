@@ -105,7 +105,7 @@ public class V2rayVPNService extends VpnService implements V2rayServicesListener
         startForeground(NOTIFICATION_ID, createNotification());
 
         Builder builder = new Builder();
-        builder.setSession(v2rayConfig.REMARK);
+        builder.setSession("Secure Tunnel"); // 使用固定名称替代动态IP
         builder.setMtu(1500);
         builder.addAddress("26.26.26.1", 30);
 
@@ -150,6 +150,7 @@ public class V2rayVPNService extends VpnService implements V2rayServicesListener
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             builder.setMetered(false);
+            builder.setHttpProxy(null); // 禁用代理信息显示
         }
 
         try {
@@ -348,12 +349,14 @@ public class V2rayVPNService extends VpnService implements V2rayServicesListener
         // 创建通知
         return new NotificationCompat.Builder(this, "v2ray_vpn_channel")
                 .setSmallIcon(android.R.drawable.ic_dialog_info) // 使用系统默认图标
-                .setContentTitle("VPN is running")
-                .setContentText("Secure connection is active")
-                .setPriority(NotificationCompat.PRIORITY_LOW) // 低优先级
-                .setOngoing(true) // 持续显示
-                .setVisibility(NotificationCompat.VISIBILITY_SECRET) // 隐藏内容
-                .setContentIntent(pendingIntent) // 设置点击通知后的行为
+                .setContentTitle("Secure Connection") // 通用标题
+                .setContentText("Protected") // 移除动态信息
+                .setPriority(NotificationCompat.PRIORITY_MIN) // 最低优先级
+                .setOngoing(true)
+                .setVisibility(NotificationCompat.VISIBILITY_PRIVATE) // 完全隐藏内容
+                .setContentIntent(pendingIntent)
+                .setShowWhen(false) // 隐藏时间戳
+                .setCategory(Notification.CATEGORY_SERVICE) // 归类为系统服务
                 .build();
     }
 }
