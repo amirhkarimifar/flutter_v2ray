@@ -33,6 +33,7 @@ import java.util.Arrays;
 
 public class V2rayVPNService extends VpnService implements V2rayServicesListener {
     private static final int NOTIFICATION_ID = 10101; // 通知ID
+    private static final String NOTIFICATION_CHANNEL_ID = "v2ray_vpn_channel"; // 通知渠道ID
     private ParcelFileDescriptor mInterface;
     private Process process;
     private V2rayConfig v2rayConfig;
@@ -89,7 +90,9 @@ public class V2rayVPNService extends VpnService implements V2rayServicesListener
             Log.e("CANT_STOP", "SELF");
         }
         try {
-            mInterface.close();
+            if (mInterface != null) {
+                mInterface.close();
+            }
         } catch (Exception e) {
             // ignored
         }
@@ -144,7 +147,9 @@ public class V2rayVPNService extends VpnService implements V2rayServicesListener
         }
 
         try {
-            mInterface.close();
+            if (mInterface != null) {
+                mInterface.close();
+            }
         } catch (Exception e) {
             //ignore
         }
@@ -324,8 +329,8 @@ public class V2rayVPNService extends VpnService implements V2rayServicesListener
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
-                    "v2ray_vpn_channel", // 渠道ID
-                    "VPN Service",       // 渠道名称
+                    NOTIFICATION_CHANNEL_ID, // 渠道ID
+                    "VPN Service",          // 渠道名称
                     NotificationManager.IMPORTANCE_LOW // 低优先级
             );
             channel.setDescription("VPN background service");
@@ -347,16 +352,16 @@ public class V2rayVPNService extends VpnService implements V2rayServicesListener
         );
 
         // 创建通知
-        return new NotificationCompat.Builder(this, "v2ray_vpn_channel")
+        return new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
                 .setSmallIcon(android.R.drawable.ic_dialog_info) // 使用系统默认图标
-                .setContentTitle("Secure Connection") // 通用标题
-                .setContentText("Protected") // 移除动态信息
-                .setPriority(NotificationCompat.PRIORITY_MIN) // 最低优先级
-                .setOngoing(true)
+                .setContentTitle("VPN 已连接")                  // 静态标题
+                .setContentText("流量受保护")                    // 移除动态IP/Port
+                .setPriority(NotificationCompat.PRIORITY_MIN)   // 最低优先级
+                .setOngoing(true)                               // 用户无法手动清除
                 .setVisibility(NotificationCompat.VISIBILITY_PRIVATE) // 完全隐藏内容
                 .setContentIntent(pendingIntent)
-                .setShowWhen(false) // 隐藏时间戳
-                .setCategory(Notification.CATEGORY_SERVICE) // 归类为系统服务
+                .setShowWhen(false)                             // 隐藏时间戳
+                .setCategory(Notification.CATEGORY_SERVICE)     // 归类为系统服务
                 .build();
     }
 }
