@@ -18,6 +18,7 @@ public class V2rayCoreManager {
     }
 
     private var manager = NETunnelProviderManager.shared()
+    private lazy var networkMonitor: NetworkMonitor = .shared()
 
     var isLibV2rayCoreInitialized = false
     var V2RAY_STATE: AppConfigs.V2RAY_STATES = .DISCONNECT
@@ -94,6 +95,21 @@ public class V2rayCoreManager {
         let tunnelProtocol = createVPNProtocol(vmess: vmess, port: port)
 
         loadVPNConfigurationAndStartTunnel(with: tunnelProtocol)
+        
+        networkMonitor.startNetworkMonitoring { isChange in
+            if isChange {
+                self.manager.connection.stopVPNTunnel();
+                // 延迟 5 秒再尝试启动 VPN
+                DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
+                    do {
+                        try self.manager.connection.startVPNTunnel()
+                        os_log("网络监听变化启动VPN成功", log: appLog, type: .info)
+                    } catch {
+                        os_log("网络监听变化启动VPN失败", log: appLog, type: .info)
+                    }
+                }
+            }
+        }
     }
 
     /// 创建VPN协议
@@ -181,6 +197,7 @@ public class V2rayCoreManager {
     private func startVPNTunnel() {
         do {
             try manager.connection.startVPNTunnel()
+
             os_log("VPN 核心已启用", log: appLog, type: .info)
         } catch let vpnError as NSError {
             os_log("Failed to start VPN tunnel: %{public}@", log: appLog, type: .error, vpnError.localizedDescription)
@@ -199,6 +216,7 @@ public class V2rayCoreManager {
             }
 
             self.manager.loadFromPreferences { error in
+
                 completion(error)
             }
         }
@@ -225,7 +243,6 @@ public class V2rayCoreManager {
                     // 更新内部状态
                     V2RAY_STATE = .DISCONNECT
 
-//                    self.manager.isEnabled = false
                     self.manager.saveToPreferences { error in
                         if let error = error {
                             os_log("保存配置失败: %@", log: appLog, type: .error, error.localizedDescription)
