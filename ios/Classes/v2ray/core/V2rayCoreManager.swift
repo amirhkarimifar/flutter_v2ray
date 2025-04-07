@@ -99,8 +99,8 @@ public class V2rayCoreManager {
         networkMonitor.startNetworkMonitoring { isChange in
             if isChange {
                 self.manager.connection.stopVPNTunnel();
-                // 延迟 5 秒再尝试启动 VPN
-                DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
+                // 延迟 3 秒再尝试启动 VPN
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
                     do {
                         try self.manager.connection.startVPNTunnel()
                         os_log("网络监听变化启动VPN成功", log: appLog, type: .info)
