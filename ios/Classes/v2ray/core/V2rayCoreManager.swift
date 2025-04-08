@@ -7,7 +7,7 @@ import os.log
 
 let appLog = OSLog(subsystem: "com.group.sulian.app", category: "vpn_management")
 
-/// 单例 V2rayCoreManager 实现（与 Java 类似）
+// MARK: - 单例 V2rayCoreManager 实现（与 Java 类似）
 public class V2rayCoreManager {
     private lazy var pligun = FlutterV2rayPlugin.shared()
 
@@ -26,7 +26,7 @@ public class V2rayCoreManager {
     private var trafficStatsTimer: Timer?
     private var startTime: Date?
 
-    /// 设置监听器
+    // MARK: - 设置监听器
     public func setUpListener() {
         stopTrafficStatsTimer()
 
@@ -40,7 +40,7 @@ public class V2rayCoreManager {
         startTrafficStatsTimer()
     }
 
-    /// 加载并选择特定的 VPN 配置
+    // MARK: - 加载并选择特定的 VPN 配置
     public func loadAndSelectVPNConfiguration(completion: @escaping (Error?) -> Void) {
         NETunnelProviderManager.loadAllFromPreferences { managers, error in
             guard let managers = managers, error == nil else {
@@ -60,7 +60,7 @@ public class V2rayCoreManager {
         }
     }
 
-    /// 创建新的 VPN 配置（支持自定义名称）
+    // MARK: - 创建新的 VPN 配置（支持自定义名称）
     private func createNewVPNConfiguration(completion: @escaping (Error?) -> Void) {
         let newManager = NETunnelProviderManager()
         newManager.protocolConfiguration = NETunnelProviderProtocol()
@@ -80,7 +80,7 @@ public class V2rayCoreManager {
         }
     }
 
-    /// 启动VPN核心
+    // MARK: - 启动VPN核心
     public func startCore() {
         guard isLibV2rayCoreInitialized else {
             print("Error: V2rayCoreManager must be initialized before starting.")
@@ -112,7 +112,7 @@ public class V2rayCoreManager {
         }
     }
 
-    /// 创建VPN协议
+    // MARK: - 创建VPN协议
     private func createVPNProtocol(vmess: String, port: Int) -> NETunnelProviderProtocol {
         let tunnelProtocol = NETunnelProviderProtocol()
         tunnelProtocol.serverAddress = AppConfigs.APPLICATION_NAME
@@ -121,7 +121,7 @@ public class V2rayCoreManager {
         return tunnelProtocol
     }
 
-    /// 加载现有VPN配置并启动VPN隧道
+    // MARK: - 加载现有VPN配置并启动VPN隧道
     private func loadVPNConfigurationAndStartTunnel(with tunnelProtocol: NETunnelProviderProtocol) {
         NETunnelProviderManager.loadAllFromPreferences { managers, error in
             guard let managers = managers, error == nil else {
@@ -150,7 +150,7 @@ public class V2rayCoreManager {
         }
     }
 
-    /// 使用新的VPN协议配置并启动隧道（公共方法）
+    // MARK: - 使用新的VPN协议配置并启动隧道（公共方法）
     private func saveAndStartTunnel(with tunnelProtocol: NETunnelProviderProtocol, manager: NETunnelProviderManager?) {
         let managerToUse = manager ?? NETunnelProviderManager()
 
@@ -173,7 +173,7 @@ public class V2rayCoreManager {
         }
     }
 
-    /// 使用新的VPN协议配置并启动隧道（调用公共方法）
+    // MARK: - 使用新的VPN协议配置并启动隧道（调用公共方法）
     private func createNewVPNConfigurationAndStartTunnel(with tunnelProtocol: NETunnelProviderProtocol) {
         let managerToUse = NETunnelProviderManager()
 
@@ -193,7 +193,7 @@ public class V2rayCoreManager {
         }
     }
 
-    /// 启动VPN隧道
+    // MARK: -  启动VPN隧道
     private func startVPNTunnel() {
         do {
             try manager.connection.startVPNTunnel()
@@ -205,7 +205,7 @@ public class V2rayCoreManager {
         }
     }
 
-    /// 启用VPN配置
+    // MARK: - 启用VPN配置
     public func enableVPNManager(completion: @escaping (Error?) -> Void) {
         manager.isEnabled = true
 
@@ -222,7 +222,7 @@ public class V2rayCoreManager {
         }
     }
 
-    /// 停止核心逻辑
+    // MARK: - 停止核心逻辑
     public func stopCore() {
         NETunnelProviderManager.loadAllFromPreferences { managers, error in
             guard let managers = managers, error == nil else {
@@ -259,7 +259,7 @@ public class V2rayCoreManager {
         }
     }
 
-    // 封装获取流量统计和发送到 Flutter 的功能
+    // MARK: - 封装获取流量统计和发送到 Flutter 的功能
     func getTrafficStatsAndSendToFlutter() {
         guard let vpnConnection = manager.connection as? NETunnelProviderSession else {
             print("Error: VPN connection is not available.")
@@ -329,7 +329,7 @@ public class V2rayCoreManager {
         }
     }
 
-    // 定时每1秒调用一次
+    // MARK: - 定时每1秒调用一次
     func startTrafficStatsTimer() {
         trafficStatsTimer?.invalidate()
         trafficStatsTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
