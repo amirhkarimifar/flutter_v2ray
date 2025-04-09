@@ -1,6 +1,5 @@
 import Flutter
 import Foundation
-import LibXray
 import Network
 import NetworkExtension
 import os.log
@@ -8,6 +7,7 @@ import os.log
 let appLog = OSLog(subsystem: "com.group.sulian.app", category: "vpn_management")
 
 // MARK: - 单例 V2rayCoreManager 实现（与 Java 类似）
+
 public class V2rayCoreManager {
     private lazy var pligun = FlutterV2rayPlugin.shared()
 
@@ -27,6 +27,7 @@ public class V2rayCoreManager {
     private var startTime: Date?
 
     // MARK: - 设置监听器
+
     public func setUpListener() {
         stopTrafficStatsTimer()
 
@@ -40,47 +41,8 @@ public class V2rayCoreManager {
         startTrafficStatsTimer()
     }
 
-    // MARK: - 加载并选择特定的 VPN 配置
-    public func loadAndSelectVPNConfiguration(completion: @escaping (Error?) -> Void) {
-        NETunnelProviderManager.loadAllFromPreferences { managers, error in
-            guard let managers = managers, error == nil else {
-                completion(error)
-                return
-            }
-
-            // 查找特定的 VPN 配置
-            if let targetManager = managers.first(where: { $0.localizedDescription == AppConfigs.APPLICATION_NAME }) {
-                // 找到匹配的配置
-                self.manager = targetManager
-                completion(nil)
-            } else {
-                // 没有找到匹配的配置，创建新的配置
-                self.createNewVPNConfiguration(completion: completion)
-            }
-        }
-    }
-
-    // MARK: - 创建新的 VPN 配置（支持自定义名称）
-    private func createNewVPNConfiguration(completion: @escaping (Error?) -> Void) {
-        let newManager = NETunnelProviderManager()
-        newManager.protocolConfiguration = NETunnelProviderProtocol()
-        newManager.protocolConfiguration?.serverAddress = AppConfigs.APPLICATION_NAME
-        newManager.localizedDescription = AppConfigs.APPLICATION_NAME
-
-        newManager.saveToPreferences { error in
-            guard error == nil else {
-                completion(error)
-                return
-            }
-
-            newManager.loadFromPreferences { _ in
-                self.manager = newManager
-                completion(nil)
-            }
-        }
-    }
-
     // MARK: - 启动VPN核心
+
     public func startCore() {
         guard isLibV2rayCoreInitialized else {
             print("Error: V2rayCoreManager must be initialized before starting.")
@@ -89,68 +51,76 @@ public class V2rayCoreManager {
 
         V2RAY_STATE = .CONNECTED
 
-        let v2rayConfig = V2rayConfig.shared // 创建 V2rayConfig 实例
-        let vmess = AppConfigs.V2RAY_CONFIG?.V2RAY_FULL_JSON_CONFIG ?? ""
-        let port = v2rayConfig.LOCAL_SOCKS5_PORT
-        let tunnelProtocol = createVPNProtocol(vmess: vmess, port: port)
+//        let v2rayConfig = V2rayConfig.shared // 创建 V2rayConfig 实例
+//        let port = v2rayConfig.LOCAL_SOCKS5_PORT
+//        let tunnelProtocol = createVPNProtocol(port: port)
 
-        loadVPNConfigurationAndStartTunnel(with: tunnelProtocol)
-        
-        networkMonitor.startNetworkMonitoring { isChange in
-            if isChange {
-                self.manager.connection.stopVPNTunnel();
-                // 延迟 3 秒再尝试启动 VPN
-                DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-                    do {
-                        try self.manager.connection.startVPNTunnel()
-                        os_log("网络监听变化启动VPN成功", log: appLog, type: .info)
-                    } catch {
-                        os_log("网络监听变化启动VPN失败", log: appLog, type: .info)
-                    }
-                }
-            }
-        }
+//        self.startVPNTunnel();
+        loadVPNConfigurationAndStartTunnel()
+
+//        networkMonitor.startNetworkMonitoring { isChange in
+//            if isChange {
+//                self.manager.connection.stopVPNTunnel()
+//                // 延迟 3 秒再尝试启动 VPN
+//                DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+//                    do {
+//                        try self.manager.connection.startVPNTunnel()
+//                        os_log("网络监听变化启动VPN成功", log: appLog, type: .info)
+//                    } catch {
+//                        os_log("网络监听变化启动VPN失败", log: appLog, type: .info)
+//                    }
+//                }
+//            }
+//        }
     }
 
     // MARK: - 创建VPN协议
-    private func createVPNProtocol(vmess: String, port: Int) -> NETunnelProviderProtocol {
+
+    private func createVPNProtocol() -> NETunnelProviderProtocol {
+        let v2rayConfig = V2rayConfig.shared // 创建 V2rayConfig 实例
+        let port = v2rayConfig.LOCAL_SOCKS5_PORT
         let tunnelProtocol = NETunnelProviderProtocol()
+        let vless = v2rayConfig.V2RAY_FULL_JSON_CONFIG ?? "";
         tunnelProtocol.serverAddress = AppConfigs.APPLICATION_NAME
-        tunnelProtocol.providerConfiguration = ["vmess": vmess, "port": port]
+        tunnelProtocol.providerConfiguration = ["vless": vless,"port": port]
         tunnelProtocol.providerBundleIdentifier = AppConfigs.BUNDLE_IDENTIFIER
         return tunnelProtocol
     }
 
     // MARK: - 加载现有VPN配置并启动VPN隧道
-    private func loadVPNConfigurationAndStartTunnel(with tunnelProtocol: NETunnelProviderProtocol) {
-        NETunnelProviderManager.loadAllFromPreferences { managers, error in
-            guard let managers = managers, error == nil else {
-                os_log("loadAllFromPreferences Failed to save VPN configuration:  %{public}@", log: appLog, type: .error, error!.localizedDescription)
-                return
-            }
+    
+    private func loadVPNConfigurationAndStartTunnel() {
+        NETunnelProviderManager.loadAllFromPreferences { [weak self] managers, _ in
+            guard let self = self else { return }
+            let targetDescription = AppConfigs.APPLICATION_NAME
+            let existingManager = managers?.first { $0.localizedDescription == targetDescription }
 
-            if managers.isEmpty {
-                self.createNewVPNConfigurationAndStartTunnel(with: tunnelProtocol)
+            if let existingManager = existingManager {
+                // 直接复用现有配置
+                self.manager = existingManager
+                self.manager.isEnabled = true
+                self.manager.saveToPreferences { _ in
+                    self.startVPNTunnel() // 直接启动，避免再次加载
+                }
             } else {
-                let targetDescription = AppConfigs.APPLICATION_NAME
-                if let existingManager = managers.first(where: { $0.localizedDescription == targetDescription }) {
-                    // 找到匹配的配置
-                    existingManager.isEnabled = true
-                    existingManager.saveToPreferences { _ in
-                        existingManager.loadFromPreferences { _ in
-                            self.manager = existingManager
-                            self.startVPNTunnel()
-                        }
+                // 创建新配置（仅首次）
+                let tunnelProtocol = createVPNProtocol()
+                let newManager = NETunnelProviderManager()
+                newManager.protocolConfiguration = tunnelProtocol
+                newManager.localizedDescription = targetDescription
+                newManager.isEnabled = true
+                newManager.saveToPreferences { _ in
+                    self.manager = newManager
+                    self.manager.loadFromPreferences { _ in
+                        self.startVPNTunnel()
                     }
-                } else {
-                    // 没有找到匹配的配置，创建新的配置
-                    self.createNewVPNConfigurationAndStartTunnel(with: tunnelProtocol)
                 }
             }
         }
     }
 
     // MARK: - 使用新的VPN协议配置并启动隧道（公共方法）
+
     private func saveAndStartTunnel(with tunnelProtocol: NETunnelProviderProtocol, manager: NETunnelProviderManager?) {
         let managerToUse = manager ?? NETunnelProviderManager()
 
@@ -174,6 +144,7 @@ public class V2rayCoreManager {
     }
 
     // MARK: - 使用新的VPN协议配置并启动隧道（调用公共方法）
+
     private func createNewVPNConfigurationAndStartTunnel(with tunnelProtocol: NETunnelProviderProtocol) {
         let managerToUse = NETunnelProviderManager()
 
@@ -194,10 +165,10 @@ public class V2rayCoreManager {
     }
 
     // MARK: -  启动VPN隧道
+
     private func startVPNTunnel() {
         do {
             try manager.connection.startVPNTunnel()
-
             os_log("VPN 核心已启用", log: appLog, type: .info)
         } catch let vpnError as NSError {
             os_log("Failed to start VPN tunnel: %{public}@", log: appLog, type: .error, vpnError.localizedDescription)
@@ -206,23 +177,11 @@ public class V2rayCoreManager {
     }
 
     // MARK: - 启用VPN配置
-    public func enableVPNManager(completion: @escaping (Error?) -> Void) {
-        manager.isEnabled = true
 
-        manager.saveToPreferences { error in
-            guard error == nil else {
-                completion(error)
-                return
-            }
-
-            self.manager.loadFromPreferences { error in
-
-                completion(error)
-            }
-        }
-    }
+    public func enableVPNManager(completion: @escaping (Error?) -> Void) {}
 
     // MARK: - 停止核心逻辑
+
     public func stopCore() {
         NETunnelProviderManager.loadAllFromPreferences { managers, error in
             guard let managers = managers, error == nil else {
@@ -260,6 +219,7 @@ public class V2rayCoreManager {
     }
 
     // MARK: - 封装获取流量统计和发送到 Flutter 的功能
+
     func getTrafficStatsAndSendToFlutter() {
         guard let vpnConnection = manager.connection as? NETunnelProviderSession else {
             print("Error: VPN connection is not available.")
@@ -330,6 +290,7 @@ public class V2rayCoreManager {
     }
 
     // MARK: - 定时每1秒调用一次
+
     func startTrafficStatsTimer() {
         trafficStatsTimer?.invalidate()
         trafficStatsTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in

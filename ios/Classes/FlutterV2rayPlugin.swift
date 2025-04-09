@@ -1,5 +1,5 @@
 import Flutter
-import LibXray
+//import LibXray
 import NetworkExtension
 import UIKit
 
@@ -117,32 +117,34 @@ public class FlutterV2rayPlugin: NSObject, FlutterPlugin {
 
     // 请求 VPN 权限
     private func handleRequestPermission(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-        coreManager.loadAndSelectVPNConfiguration { [weak self] error in
-            if let error = error {
-                self?.handleFlutterError(
-                    result: result,
-                    code: "VPN_LOAD_FAILED",
-                    message: "加载 VPN 偏好设置失败",
-                    details: error.localizedDescription
-                )
-                return
-            }
-            self?.enableVPN(result: result)
-        }
+//        coreManager.loadAndSelectVPNConfiguration { [weak self] error in
+//            if let error = error {
+//                self?.handleFlutterError(
+//                    result: result,
+//                    code: "VPN_LOAD_FAILED",
+//                    message: "加载 VPN 偏好设置失败",
+//                    details: error.localizedDescription
+//                )
+//                return
+//            }
+//            result(true)
+//        }
+        result(true);
     }
 
     // 获取核心版本号
     private func handleGetCoreVersion(_ call: FlutterMethodCall, result: FlutterResult) {
-        let baseVersion = LibXrayXrayVersion()
-        // Call the function
-        if let jsonObject = Utilities.decodeBase64AndParseJSON(baseVersion) {
-            // Access individual keys in the JSON object
-            if let data = jsonObject["data"] as? String {
-                result("v\(data)")
-            }
-        } else {
-            result(nil)
-        }
+//        let baseVersion = LibXrayXrayVersion()
+//        // Call the function
+//        if let jsonObject = Utilities.decodeBase64AndParseJSON(baseVersion) {
+//            // Access individual keys in the JSON object
+//            if let data = jsonObject["data"] as? String {
+//                result("v\(data)")
+//            }
+//        } else {
+//            result(nil)
+//        }
+        result("v1.0.0")
     }
 
     // 检查VPN
@@ -181,21 +183,21 @@ public class FlutterV2rayPlugin: NSObject, FlutterPlugin {
         result(delay)
     }
 
-    // 启用 VPN
-    private func enableVPN(result: @escaping FlutterResult) {
-        coreManager.enableVPNManager { [weak self] error in
-            if let error = error {
-                self?.handleFlutterError(
-                    result: result,
-                    code: "VPN_ENABLE_FAILED",
-                    message: "启用 VPN 失败",
-                    details: error.localizedDescription
-                )
-                return
-            }
-            result(true)
-        }
-    }
+//    // 启用 VPN
+//    private func enableVPN(result: @escaping FlutterResult) {
+//        coreManager.enableVPNManager { [weak self] error in
+//            if let error = error {
+//                self?.handleFlutterError(
+//                    result: result,
+//                    code: "VPN_ENABLE_FAILED",
+//                    message: "启用 VPN 失败",
+//                    details: error.localizedDescription
+//                )
+//                return
+//            }
+//            result(true)
+//        }
+//    }
 
     // 处理 Flutter 错误
     private func handleFlutterError(result: @escaping FlutterResult, code: String, message: String, details: String?) {
