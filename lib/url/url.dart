@@ -97,8 +97,8 @@ abstract class V2RayURL {
   };
 
   Map<String, dynamic> routing = {
-    "domainStrategy": "UseIp",
-    "domainMatcher": null,
+    "domainStrategy": "AsIs",
+    "domainMatcher": "hybrid",
     "rules": [],
     "balancers": []
   };
