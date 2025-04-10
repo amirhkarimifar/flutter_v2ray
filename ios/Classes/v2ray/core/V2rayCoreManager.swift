@@ -50,12 +50,6 @@ public class V2rayCoreManager {
         }
 
         V2RAY_STATE = .CONNECTED
-
-//        let v2rayConfig = V2rayConfig.shared // 创建 V2rayConfig 实例
-//        let port = v2rayConfig.LOCAL_SOCKS5_PORT
-//        let tunnelProtocol = createVPNProtocol(port: port)
-
-//        self.startVPNTunnel();
         loadVPNConfigurationAndStartTunnel()
 
 //        networkMonitor.startNetworkMonitoring { isChange in
@@ -80,7 +74,7 @@ public class V2rayCoreManager {
         let v2rayConfig = V2rayConfig.shared // 创建 V2rayConfig 实例
         let port = v2rayConfig.LOCAL_SOCKS5_PORT
         let tunnelProtocol = NETunnelProviderProtocol()
-        let vless = v2rayConfig.V2RAY_FULL_JSON_CONFIG ?? "";
+        let vless = AppConfigs.V2RAY_CONFIG?.V2RAY_FULL_JSON_CONFIG ?? ""
         tunnelProtocol.serverAddress = AppConfigs.APPLICATION_NAME
         tunnelProtocol.providerConfiguration = ["vless": vless,"port": port]
         tunnelProtocol.providerBundleIdentifier = AppConfigs.BUNDLE_IDENTIFIER
