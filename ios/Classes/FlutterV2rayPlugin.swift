@@ -170,22 +170,6 @@ public class FlutterV2rayPlugin: NSObject, FlutterPlugin {
         result(delay)
     }
 
-//    // 启用 VPN
-//    private func enableVPN(result: @escaping FlutterResult) {
-//        coreManager.enableVPNManager { [weak self] error in
-//            if let error = error {
-//                self?.handleFlutterError(
-//                    result: result,
-//                    code: "VPN_ENABLE_FAILED",
-//                    message: "启用 VPN 失败",
-//                    details: error.localizedDescription
-//                )
-//                return
-//            }
-//            result(true)
-//        }
-//    }
-
     // 处理 Flutter 错误
     private func handleFlutterError(result: @escaping FlutterResult, code: String, message: String, details: String?) {
         print("[错误] 代码: \(code), 信息: \(message), 详情: \(details ?? "无详细信息")")

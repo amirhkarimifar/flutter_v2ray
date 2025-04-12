@@ -76,13 +76,13 @@ public class V2rayCoreManager {
         let tunnelProtocol = NETunnelProviderProtocol()
         let vless = AppConfigs.V2RAY_CONFIG?.V2RAY_FULL_JSON_CONFIG ?? ""
         tunnelProtocol.serverAddress = AppConfigs.APPLICATION_NAME
-        tunnelProtocol.providerConfiguration = ["vless": vless,"port": port]
+        tunnelProtocol.providerConfiguration = ["vless": vless, "port": port]
         tunnelProtocol.providerBundleIdentifier = AppConfigs.BUNDLE_IDENTIFIER
         return tunnelProtocol
     }
 
     // MARK: - 加载现有VPN配置并启动VPN隧道
-    
+
     private func loadVPNConfigurationAndStartTunnel() {
         NETunnelProviderManager.loadAllFromPreferences { [weak self] managers, _ in
             guard let self = self else { return }
@@ -90,31 +90,37 @@ public class V2rayCoreManager {
             let existingManager = managers?.first { $0.localizedDescription == targetDescription }
 
             if let existingManager = existingManager {
-                // 直接复用现有配置
+                // 直接复用现有配置（不重复操作）
                 self.manager = existingManager
                 self.manager.isEnabled = true
                 self.manager.saveToPreferences { _ in
                     self.manager.loadFromPreferences { _ in
-                        self.startVPNTunnel() // 直接启动，避免再次加载
+                        self.startVPNTunnel()
                     }
                 }
             } else {
-                // 创建新配置（仅首次）
+                // 首次创建配置时，执行两次 save+load（核心改动）
                 let tunnelProtocol = createVPNProtocol()
                 let newManager = NETunnelProviderManager()
                 newManager.protocolConfiguration = tunnelProtocol
                 newManager.localizedDescription = targetDescription
                 newManager.isEnabled = true
+
+                // 第一次保存和加载
                 newManager.saveToPreferences { _ in
-                    self.manager = newManager
-                    self.manager.loadFromPreferences { _ in
-                        self.startVPNTunnel()
+                    newManager.loadFromPreferences { _ in
+                        // 第二次保存和加载
+                        newManager.saveToPreferences { _ in
+                            self.manager = newManager
+                            newManager.loadFromPreferences { _ in
+                                self.startVPNTunnel()
+                            }
+                        }
                     }
                 }
             }
         }
     }
-
 
     // MARK: -  启动VPN隧道
 
