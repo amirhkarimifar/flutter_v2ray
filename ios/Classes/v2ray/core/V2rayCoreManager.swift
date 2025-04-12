@@ -94,7 +94,9 @@ public class V2rayCoreManager {
                 self.manager = existingManager
                 self.manager.isEnabled = true
                 self.manager.saveToPreferences { _ in
-                    self.startVPNTunnel() // 直接启动，避免再次加载
+                    self.manager.loadFromPreferences { _ in
+                        self.startVPNTunnel() // 直接启动，避免再次加载
+                    }
                 }
             } else {
                 // 创建新配置（仅首次）
@@ -113,50 +115,6 @@ public class V2rayCoreManager {
         }
     }
 
-    // MARK: - 使用新的VPN协议配置并启动隧道（公共方法）
-
-    private func saveAndStartTunnel(with tunnelProtocol: NETunnelProviderProtocol, manager: NETunnelProviderManager?) {
-        let managerToUse = manager ?? NETunnelProviderManager()
-
-        managerToUse.isEnabled = true
-        managerToUse.protocolConfiguration = tunnelProtocol
-        managerToUse.localizedDescription = AppConfigs.APPLICATION_NAME
-
-        managerToUse.saveToPreferences { error in
-            if let error = error {
-                os_log("saveAndStartTunnel Failed to save VPN configuration:  %{public}@", log: appLog, type: .error, error.localizedDescription)
-            } else {
-                // 如果是新的管理器，则保存并启动隧道
-                if manager == nil {
-                    self.manager = managerToUse
-                }
-                managerToUse.loadFromPreferences { _ in
-                    self.startVPNTunnel()
-                }
-            }
-        }
-    }
-
-    // MARK: - 使用新的VPN协议配置并启动隧道（调用公共方法）
-
-    private func createNewVPNConfigurationAndStartTunnel(with tunnelProtocol: NETunnelProviderProtocol) {
-        let managerToUse = NETunnelProviderManager()
-
-        managerToUse.isEnabled = true
-        managerToUse.protocolConfiguration = tunnelProtocol
-        managerToUse.localizedDescription = AppConfigs.APPLICATION_NAME
-
-        managerToUse.saveToPreferences { error in
-            if let error = error {
-                os_log("saveAndStartTunnel Failed to save VPN configuration:  %{public}@", log: appLog, type: .error, error.localizedDescription)
-            } else {
-                self.manager = managerToUse
-                managerToUse.loadFromPreferences { _ in
-                    self.startVPNTunnel()
-                }
-            }
-        }
-    }
 
     // MARK: -  启动VPN隧道
 
