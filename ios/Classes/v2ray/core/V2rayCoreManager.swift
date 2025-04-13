@@ -138,9 +138,6 @@ public class V2rayCoreManager {
         }
     }
 
-    // MARK: - 启用VPN配置
-
-    public func enableVPNManager(completion: @escaping (Error?) -> Void) {}
 
     // MARK: - 停止核心逻辑
 
