@@ -94,8 +94,12 @@ public class V2rayCoreManager {
                 self.manager = existingManager
                 self.manager.isEnabled = true
                 self.manager.saveToPreferences { _ in
-                    self.manager.loadFromPreferences { _ in
-                        self.startVPNTunnel()
+                    self.manager.loadFromPreferences {  _ in
+                        self.manager.saveToPreferences { _ in
+                            self.manager.loadFromPreferences { _ in
+                                self.startVPNTunnel()
+                            }
+                        }
                     }
                 }
             } else {
