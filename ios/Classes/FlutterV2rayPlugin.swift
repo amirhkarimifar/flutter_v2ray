@@ -172,7 +172,6 @@ public class FlutterV2rayPlugin: NSObject, FlutterPlugin {
 
     // 处理 Flutter 错误
     private func handleFlutterError(result: @escaping FlutterResult, code: String, message: String, details: String?) {
-        print("[错误] 代码: \(code), 信息: \(message), 详情: \(details ?? "无详细信息")")
         result(FlutterError(
             code: code,
             message: message,

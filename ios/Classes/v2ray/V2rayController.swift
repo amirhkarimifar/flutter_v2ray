@@ -17,9 +17,38 @@ public class V2rayController {
     private lazy var coreManager: V2rayCoreManager = .shared()
     private var manager = NETunnelProviderManager.shared()
 
-//    public init() {
-//        VPNConfigValidator.checkInitialState()
-//    }
+    private lazy var vpnConifg: VPNConfigValidator = .shared()
+    
+    private var vpnStatusObserver: NSObjectProtocol?
+    deinit {
+        // 移除监听
+        if let observer = vpnStatusObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+    }
+
+    // 设置VPN状态监听
+    private func setupVPNStatusObserver(result: @escaping FlutterResult) {
+        vpnStatusObserver = NotificationCenter.default.addObserver(
+            forName: .NEVPNStatusDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self = self else { return }
+
+//            os_log("VPN状态变化通知触发", log: conLog, type: .debug)
+
+            vpnConifg.checkInitialState { isValid in
+//                print("isValid: \(isValid)")
+                AppConfigs.V2RAY_STATE = .CONNECTED
+                self.initializeV2Ray(result: result)
+                if let observer = self.vpnStatusObserver {
+                    NotificationCenter.default.removeObserver(observer)
+                    self.vpnStatusObserver = nil
+                }
+            }
+        }
+    }
 
     public func initializeV2Ray(result: @escaping FlutterResult) {
         // 获取 V2RAY_STATE 的字符串表示
@@ -40,6 +69,11 @@ public class V2rayController {
 
     // 启动 V2ray
     public func startV2Ray(remark: String, config: String, blockedApps: [String], bypassSubnets: [String], proxyOnly: Bool, result: @escaping FlutterResult) {
+        // 首次启动时设置监听
+        if vpnStatusObserver == nil {
+            setupVPNStatusObserver(result: result)
+        }
+
         coreManager.setUpListener()
         // 打印输入参数，便于调试
 //        print("startV2Ray 被调用，传入的参数如下：")
@@ -56,7 +90,7 @@ public class V2rayController {
         }
 
         AppConfigs.V2RAY_CONFIG = v2rayConfig
-        AppConfigs.V2RAY_STATE = .CONNECTED
+//        AppConfigs.V2RAY_STATE = .CONNECTED
 
 //        print(AppConfigs.V2RAY_CONFIG?.APPLICATION_ICON ?? 0)
 //        print(AppConfigs.V2RAY_CONFIG?.APPLICATION_NAME ?? "Default Name")
@@ -78,7 +112,7 @@ public class V2rayController {
 
         coreManager.startCore()
 
-        initializeV2Ray(result: result)
+//        initializeV2Ray(result: result)
     }
 
     public func stopV2Ray(result: @escaping FlutterResult) {
