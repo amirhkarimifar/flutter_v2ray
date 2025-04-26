@@ -37,8 +37,10 @@ public class V2rayCoreManager {
 
         // Record the start time
         startTime = Date()
-        // 调用 startTrafficStatsTimer 启动定时器
-        startTrafficStatsTimer()
+        #if DEBUG
+            // 调用 startTrafficStatsTimer 启动定时器
+            startTrafficStatsTimer()
+        #endif
     }
 
     // MARK: - 启动VPN核心
@@ -94,7 +96,7 @@ public class V2rayCoreManager {
                 self.manager = existingManager
                 self.manager.isEnabled = true
                 self.manager.saveToPreferences { _ in
-                    self.manager.loadFromPreferences {  _ in
+                    self.manager.loadFromPreferences { _ in
                         self.manager.saveToPreferences { _ in
                             self.manager.loadFromPreferences { _ in
                                 self.startVPNTunnel()
@@ -137,7 +139,6 @@ public class V2rayCoreManager {
             os_log("Error code: %{public}d", log: appLog, type: .error, vpnError.code)
         }
     }
-
 
     // MARK: - 停止核心逻辑
 
@@ -252,7 +253,7 @@ public class V2rayCoreManager {
 
     func startTrafficStatsTimer() {
         trafficStatsTimer?.invalidate()
-        trafficStatsTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
+        trafficStatsTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             self?.getTrafficStatsAndSendToFlutter()
         }
     }
