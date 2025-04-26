@@ -137,6 +137,18 @@ public class V2rayCoreManager {
         } catch let vpnError as NSError {
             os_log("Failed to start VPN tunnel: %{public}@", log: appLog, type: .error, vpnError.localizedDescription)
             os_log("Error code: %{public}d", log: appLog, type: .error, vpnError.code)
+
+            // 添加更详细的错误处理
+            switch vpnError.code {
+            case NEVPNError.configurationInvalid.rawValue:
+                os_log("配置无效", log: appLog, type: .error)
+            case NEVPNError.configurationStale.rawValue:
+                os_log("配置已过期", log: appLog, type: .error)
+            case NEVPNError.connectionFailed.rawValue:
+                os_log("连接失败", log: appLog, type: .error)
+            default:
+                os_log("未知VPN错误", log: appLog, type: .error)
+            }
         }
     }
 

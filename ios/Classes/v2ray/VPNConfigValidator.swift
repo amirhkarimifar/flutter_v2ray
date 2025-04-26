@@ -8,12 +8,6 @@ public class VPNConfigValidator {
         return sharedVPNConfigValidator
     }
     
-    // V2Ray 控制器的单例实例
-    private lazy var controller: V2rayController = .shared()
-    
-    // V2ray Core
-    private lazy var coreManager: V2rayCoreManager = .shared()
-       
     public typealias VpnStausChangeCallback = (Bool) -> Void
     
 //    private var currentCallback: VpnStausChangeCallback

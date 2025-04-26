@@ -26,12 +26,27 @@ public class V2rayController {
             NotificationCenter.default.removeObserver(observer)
         }
     }
-    
+
     // 防抖计时器变量
     var debounceTimer: Timer?
     let debounceInterval: TimeInterval = 0.5 // 设置防抖间隔为0.5秒
+    var timeoutTimer: Timer? // 新增超时计时器
+    let timeoutInterval: TimeInterval = 10.0 // 设置超时时间为10秒
+
     // 设置VPN状态监听
     private func setupVPNStatusObserver(result: @escaping FlutterResult) {
+        // 先取消所有现有计时器
+        debounceTimer?.invalidate()
+        timeoutTimer?.invalidate()
+
+        // 设置超时计时器
+        timeoutTimer = Timer.scheduledTimer(withTimeInterval: timeoutInterval, repeats: false) { [weak self] _ in
+            guard let self = self else { return }
+            os_log("VPN状态检测超时", log: conLog, type: .error)
+            self.cleanupObservers()
+            AppConfigs.V2RAY_STATE = .DISCONNECT
+            self.initializeV2Ray(result: result)
+        }
 
         vpnStatusObserver = NotificationCenter.default.addObserver(
             forName: .NEVPNStatusDidChange,
@@ -39,27 +54,37 @@ public class V2rayController {
             queue: .main
         ) { [weak self] _ in
             guard let self = self else { return }
-            
-            // 取消之前的计时器
+
+            // 取消之前的防抖计时器
             debounceTimer?.invalidate()
 
-            // 设置新的计时器
-            debounceTimer = Timer.scheduledTimer(withTimeInterval: debounceInterval, repeats: false) { _ in
-//                os_log("VPN状态变化通知触发", log: conLog, type: .debug)
+            // 设置新的防抖计时器
+            debounceTimer = Timer.scheduledTimer(withTimeInterval: debounceInterval, repeats: false) { [weak self] _ in
+                guard let self = self else { return }
+
+                os_log("VPN状态变化通知触发", log: conLog, type: .debug)
                 self.vpnConifg.checkInitialState { isValid in
-//                    print("isValid: \(isValid)")
+                    print("isValid: \(isValid)")
                     if isValid {
-                        if let observer = self.vpnStatusObserver {
-                            NotificationCenter.default.removeObserver(observer)
-                            self.vpnStatusObserver = nil
-                            self.debounceTimer?.invalidate()
-                        }
+                        self.cleanupObservers()
                         AppConfigs.V2RAY_STATE = .CONNECTED
                         self.initializeV2Ray(result: result)
                     }
                 }
             }
         }
+    }
+
+    // 清理观察者和计时器
+    private func cleanupObservers() {
+        if let observer = vpnStatusObserver {
+            NotificationCenter.default.removeObserver(observer)
+            vpnStatusObserver = nil
+        }
+        debounceTimer?.invalidate()
+        debounceTimer = nil
+        timeoutTimer?.invalidate()
+        timeoutTimer = nil
     }
 
     public func initializeV2Ray(result: @escaping FlutterResult) {
