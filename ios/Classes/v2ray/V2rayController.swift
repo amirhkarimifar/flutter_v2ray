@@ -18,7 +18,7 @@ public class V2rayController {
     private var manager = NETunnelProviderManager.shared()
 
     private lazy var vpnConifg: VPNConfigValidator = .shared()
-    
+
     private var vpnStatusObserver: NSObjectProtocol?
     deinit {
         // 移除监听
@@ -26,25 +26,37 @@ public class V2rayController {
             NotificationCenter.default.removeObserver(observer)
         }
     }
-
+    
+    // 防抖计时器变量
+    var debounceTimer: Timer?
+    let debounceInterval: TimeInterval = 0.5 // 设置防抖间隔为0.5秒
     // 设置VPN状态监听
     private func setupVPNStatusObserver(result: @escaping FlutterResult) {
+
         vpnStatusObserver = NotificationCenter.default.addObserver(
             forName: .NEVPNStatusDidChange,
             object: nil,
             queue: .main
         ) { [weak self] _ in
             guard let self = self else { return }
+            
+            // 取消之前的计时器
+            debounceTimer?.invalidate()
 
-//            os_log("VPN状态变化通知触发", log: conLog, type: .debug)
-
-            vpnConifg.checkInitialState { isValid in
-//                print("isValid: \(isValid)")
-                AppConfigs.V2RAY_STATE = .CONNECTED
-                self.initializeV2Ray(result: result)
-                if let observer = self.vpnStatusObserver {
-                    NotificationCenter.default.removeObserver(observer)
-                    self.vpnStatusObserver = nil
+            // 设置新的计时器
+            debounceTimer = Timer.scheduledTimer(withTimeInterval: debounceInterval, repeats: false) { _ in
+//                os_log("VPN状态变化通知触发", log: conLog, type: .debug)
+                self.vpnConifg.checkInitialState { isValid in
+//                    print("isValid: \(isValid)")
+                    if isValid {
+                        if let observer = self.vpnStatusObserver {
+                            NotificationCenter.default.removeObserver(observer)
+                            self.vpnStatusObserver = nil
+                            self.debounceTimer?.invalidate()
+                        }
+                        AppConfigs.V2RAY_STATE = .CONNECTED
+                        self.initializeV2Ray(result: result)
+                    }
                 }
             }
         }
