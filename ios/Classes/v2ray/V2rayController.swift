@@ -31,7 +31,7 @@ public class V2rayController {
     var debounceTimer: Timer?
     let debounceInterval: TimeInterval = 0.5 // 设置防抖间隔为0.5秒
     var timeoutTimer: Timer? // 新增超时计时器
-    let timeoutInterval: TimeInterval = 10.0 // 设置超时时间为10秒
+    let timeoutInterval: TimeInterval = 5.0 // 设置超时时间为5秒
 
     // 设置VPN状态监听
     private func setupVPNStatusObserver(result: @escaping FlutterResult) {
@@ -69,7 +69,7 @@ public class V2rayController {
                         self.cleanupObservers()
                         AppConfigs.V2RAY_STATE = .CONNECTED
                         self.initializeV2Ray(result: result)
-                    }
+                    } 
                 }
             }
         }
