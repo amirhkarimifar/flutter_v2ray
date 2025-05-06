@@ -31,7 +31,7 @@ public class V2rayController {
     var debounceTimer: Timer?
     let debounceInterval: TimeInterval = 0.5 // 设置防抖间隔为0.5秒
     var timeoutTimer: Timer? // 新增超时计时器
-    let timeoutInterval: TimeInterval = 5.0 // 设置超时时间为5秒
+//    let timeoutInterval: TimeInterval = 5.0 // 设置超时时间为5秒
 
     // 设置VPN状态监听
     private func setupVPNStatusObserver(result: @escaping FlutterResult) {
@@ -40,13 +40,13 @@ public class V2rayController {
         timeoutTimer?.invalidate()
 
         // 设置超时计时器
-        timeoutTimer = Timer.scheduledTimer(withTimeInterval: timeoutInterval, repeats: false) { [weak self] _ in
-            guard let self = self else { return }
-            os_log("VPN状态检测超时", log: conLog, type: .error)
-            self.cleanupObservers()
-            AppConfigs.V2RAY_STATE = .DISCONNECT
-            self.initializeV2Ray(result: result)
-        }
+//        timeoutTimer = Timer.scheduledTimer(withTimeInterval: timeoutInterval, repeats: false) { [weak self] _ in
+//            guard let self = self else { return }
+//            os_log("VPN状态检测超时", log: conLog, type: .error)
+//            self.cleanupObservers()
+//            AppConfigs.V2RAY_STATE = .DISCONNECT
+//            self.initializeV2Ray(result: result)
+//        }
 
         vpnStatusObserver = NotificationCenter.default.addObserver(
             forName: .NEVPNStatusDidChange,
